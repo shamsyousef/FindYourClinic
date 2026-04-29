@@ -1,5 +1,5 @@
-/// Domain entity for notifications.
-/// Pure Dart — no Flutter imports.
+// Domain entity for notifications.
+// Pure Dart — no Flutter imports.
 
 class AppNotification {
   final String id;

@@ -34,6 +34,7 @@ public class GetMyNotificationsQueryHandler : IRequestHandler<GetMyNotifications
             .OrderByDescending(x => x.CreatedAt);
 
         var total = await query.CountAsync(cancellationToken);
+        var unreadCount = await query.CountAsync(x => !x.IsRead, cancellationToken);
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -47,6 +48,6 @@ public class GetMyNotificationsQueryHandler : IRequestHandler<GetMyNotifications
                 x.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        return ApiResponse<NotificationsPageDto>.Ok(new NotificationsPageDto(items, page, pageSize, total));
+        return ApiResponse<NotificationsPageDto>.Ok(new NotificationsPageDto(items, page, pageSize, total, unreadCount));
     }
 }

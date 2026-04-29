@@ -108,30 +108,38 @@ public class MessagesController : ControllerBase
         return Ok(ApiResponse<List<MessageDto>>.Ok(messages));
     }
 
-    [HttpPost("conversations/{doctorId:guid}")]
-    public async Task<IActionResult> StartOrGetConversation([FromRoute] Guid doctorId, CancellationToken cancellationToken)
+    [HttpPost("conversations/{counterpartyId:guid}")]
+    public async Task<IActionResult> StartOrGetConversation([FromRoute] Guid counterpartyId, CancellationToken cancellationToken)
     {
         var userId = UserContext.GetRequiredUserId(User);
-        if (UserContext.GetRequiredRole(User) != UserRole.Patient)
+        var role = UserContext.GetRequiredRole(User);
+
+        if (role != UserRole.Patient && role != UserRole.Doctor)
         {
-            throw new ForbiddenException("Only patients can start conversations.");
+            throw new ForbiddenException("Only patients and doctors can start conversations.");
         }
 
-        var doctorExists = await _dbContext.Users.AnyAsync(
-            x => x.Id == doctorId && x.Role == UserRole.Doctor && x.IsActive,
+        Guid patientId = role == UserRole.Patient ? userId : counterpartyId;
+        Guid doctorId = role == UserRole.Doctor ? userId : counterpartyId;
+
+        var counterpartyExists = await _dbContext.Users.AnyAsync(
+            x => x.Id == counterpartyId && x.IsActive,
             cancellationToken);
-        if (!doctorExists)
+
+        if (!counterpartyExists)
         {
-            throw new NotFoundException("Doctor not found.");
+            throw new NotFoundException("User not found.");
         }
+
+        await EnsureValidAppointmentAsync(patientId, doctorId, cancellationToken);
 
         var conversation = await _dbContext.Conversations
-            .FirstOrDefaultAsync(x => x.PatientId == userId && x.DoctorId == doctorId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.PatientId == patientId && x.DoctorId == doctorId, cancellationToken);
         if (conversation is null)
         {
             conversation = new Conversation
             {
-                PatientId = userId,
+                PatientId = patientId,
                 DoctorId = doctorId,
                 LastMessageAt = DateTime.UtcNow
             };
@@ -151,6 +159,7 @@ public class MessagesController : ControllerBase
             ?? throw new NotFoundException("Conversation not found.");
 
         EnsureParticipant(conversation, userId);
+        await EnsureValidAppointmentAsync(conversation.PatientId, conversation.DoctorId, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(request.Content))
         {
@@ -234,6 +243,19 @@ public class MessagesController : ControllerBase
         if (conversation.PatientId != userId && conversation.DoctorId != userId)
         {
             throw new ForbiddenException("You do not have access to this conversation.");
+        }
+    }
+
+    private async Task EnsureValidAppointmentAsync(Guid patientId, Guid doctorId, CancellationToken cancellationToken)
+    {
+        var hasValidAppointment = await _dbContext.Appointments.AnyAsync(
+            x => x.PatientId == patientId && x.DoctorProfile.UserId == doctorId && 
+                 (x.Status == AppointmentStatus.Confirmed || x.Status == AppointmentStatus.Completed),
+            cancellationToken);
+
+        if (!hasValidAppointment)
+        {
+            throw new ForbiddenException("You can only chat with doctors you have a confirmed or completed appointment with.");
         }
     }
 

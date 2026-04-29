@@ -10,9 +10,23 @@ class GetNotificationsUseCase {
       _repository.getNotifications(page: page);
 }
 
+class GetUnreadNotificationCountUseCase {
+  final NotificationRepository _repository;
+  const GetUnreadNotificationCountUseCase(this._repository);
+
+  Future<ApiResult<int>> call() => _repository.getUnreadCount();
+}
+
 class MarkNotificationReadUseCase {
   final NotificationRepository _repository;
   const MarkNotificationReadUseCase(this._repository);
 
   Future<ApiResult<void>> call(String id) => _repository.markAsRead(id);
+}
+
+class RegisterDeviceTokenUseCase {
+  final NotificationRepository _repository;
+  const RegisterDeviceTokenUseCase(this._repository);
+
+  Future<ApiResult<void>> call(String token) => _repository.registerDeviceToken(token);
 }

@@ -18,4 +18,5 @@ public sealed record NotificationsPageDto(
     List<NotificationItemDto> Items,
     int Page,
     int PageSize,
-    int TotalCount);
+    int TotalCount,
+    int UnreadCount);
