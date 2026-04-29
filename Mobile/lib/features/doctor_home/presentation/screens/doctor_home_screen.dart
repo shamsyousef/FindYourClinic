@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../notifications/presentation/cubits/notification_badge_cubit.dart';
+import '../../../notifications/presentation/cubits/notification_badge_state.dart';
 import '../cubits/doctor_home_cubit.dart';
 import '../cubits/doctor_home_state.dart';
 import '../widgets/next_appointment_card.dart';
@@ -91,21 +93,47 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                         ],
                                       ),
                                     ),
-                                    IconButton(
-                                      onPressed: () =>
-                                          context.pushNamed('notifications'),
-                                      icon: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withAlpha(30),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(
-                                            Icons.notifications_outlined,
-                                            color: Colors.white,
-                                            size: 24),
-                                      ),
+                                    BlocBuilder<NotificationBadgeCubit,
+                                        NotificationBadgeState>(
+                                      builder: (context, badgeState) {
+                                        final count = badgeState
+                                                is NotificationBadgeLoaded
+                                            ? badgeState.unreadCount
+                                            : 0;
+                                        return IconButton(
+                                          onPressed: () => context
+                                              .pushNamed('notifications')
+                                              .then((_) {
+                                            if (context.mounted) {
+                                              context
+                                                  .read<NotificationBadgeCubit>()
+                                                  .loadUnreadCount();
+                                            }
+                                          }),
+                                          icon: Badge(
+                                            isLabelVisible: count > 0,
+                                            label: Text(
+                                              count > 99
+                                                  ? '99+'
+                                                  : count.toString(),
+                                            ),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Colors.white.withAlpha(30),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(
+                                                Icons.notifications_outlined,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -226,8 +254,23 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                      child: Text("Today's Schedule",
-                          style: AppTextStyles.heading3),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Today's Schedule",
+                              style: AppTextStyles.heading3),
+                          TextButton.icon(
+                            onPressed: () => context.push('/doctor/home/availability'),
+                            icon: const Icon(Icons.edit_calendar, size: 18),
+                            label: const Text('Manage'),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -248,7 +291,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       sliver: SliverList.separated(
                         itemCount: dashboard.todaySchedule.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           return ScheduleItemCard(
                             item: dashboard.todaySchedule[index],

@@ -1,5 +1,5 @@
-/// Domain entities for the doctor dashboard.
-/// Pure Dart — no Flutter imports.
+// Domain entities for the doctor dashboard.
+// Pure Dart — no Flutter imports.
 
 class DoctorDashboard {
   final QuickStats quickStats;
