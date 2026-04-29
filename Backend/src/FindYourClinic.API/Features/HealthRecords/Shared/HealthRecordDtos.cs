@@ -5,12 +5,20 @@ public sealed record HealthRecordDto(
     string Title,
     string Type,
     string? Value,
+    string? Unit,
     DateTime RecordedAt,
     string? Notes);
 
 public sealed record HealthSummaryDto(
-    int MedicalRecordsCount,
-    string? LatestHeartRate,
-    string? LatestBloodPressure,
-    DateTime? LatestHeartRateAt,
-    DateTime? LatestBloodPressureAt);
+    int TotalRecords,
+    VitalDto? BloodPressure,
+    VitalDto? HeartRate,
+    VitalDto? BloodSugar,
+    VitalDto? Temperature,
+    VitalDto? Weight,
+    VitalDto? SpO2);
+
+public sealed record VitalDto(
+    string Value,
+    string? Unit,
+    DateTime RecordedAt);

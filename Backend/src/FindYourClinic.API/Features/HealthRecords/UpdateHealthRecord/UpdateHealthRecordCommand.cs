@@ -3,10 +3,11 @@ using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using MediatR;
 
-namespace FindYourClinic.API.Features.HealthRecords.CreateHealthRecord;
+namespace FindYourClinic.API.Features.HealthRecords.UpdateHealthRecord;
 
-public class CreateHealthRecordCommand : IRequest<ApiResponse<HealthRecordDto>>
+public class UpdateHealthRecordCommand : IRequest<ApiResponse<HealthRecordDto>>
 {
+    public Guid RecordId { get; set; }
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }
     public string Title { get; set; } = string.Empty;

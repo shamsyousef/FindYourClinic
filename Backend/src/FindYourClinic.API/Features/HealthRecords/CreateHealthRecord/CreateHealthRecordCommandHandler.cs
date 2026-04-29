@@ -32,13 +32,16 @@ public class CreateHealthRecordCommandHandler : IRequestHandler<CreateHealthReco
             Title = request.Title.Trim(),
             Type = request.Type,
             Value = request.Value?.Trim(),
+            Unit = request.Unit?.Trim(),
             RecordedAt = request.RecordedAt ?? DateTime.UtcNow,
             Notes = request.Notes?.Trim()
         };
 
         _dbContext.HealthRecords.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ApiResponse<HealthRecordDto>.Ok(new HealthRecordDto(entity.Id, entity.Title, entity.Type.ToString(), entity.Value, entity.RecordedAt, entity.Notes), "Health record created.");
+        return ApiResponse<HealthRecordDto>.Ok(
+            new HealthRecordDto(entity.Id, entity.Title, entity.Type.ToString(), entity.Value, entity.Unit, entity.RecordedAt, entity.Notes),
+            "Health record created.");
     }
 
     private static void EnsurePatient(UserRole role)

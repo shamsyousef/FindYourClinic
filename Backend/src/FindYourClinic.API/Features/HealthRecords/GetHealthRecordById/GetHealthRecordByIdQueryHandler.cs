@@ -24,7 +24,7 @@ public class GetHealthRecordByIdQueryHandler : IRequestHandler<GetHealthRecordBy
         var record = await _dbContext.HealthRecords
             .AsNoTracking()
             .Where(x => x.Id == request.RecordId && x.PatientId == request.UserId)
-            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.RecordedAt, x.Notes))
+            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.Unit, x.RecordedAt, x.Notes))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Health record not found.");
 

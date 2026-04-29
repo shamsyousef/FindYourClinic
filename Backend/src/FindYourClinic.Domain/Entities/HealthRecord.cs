@@ -10,6 +10,7 @@ public class HealthRecord : AuditableEntity
     public string Title { get; set; } = string.Empty;
     public HealthRecordType Type { get; set; }
     public string? Value { get; set; }
+    public string? Unit { get; set; }
     public DateTime RecordedAt { get; set; }
     public string? Notes { get; set; }
 

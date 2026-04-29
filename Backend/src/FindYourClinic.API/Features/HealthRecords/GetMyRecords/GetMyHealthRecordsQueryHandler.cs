@@ -21,11 +21,18 @@ public class GetMyHealthRecordsQueryHandler : IRequestHandler<GetMyHealthRecords
     {
         EnsurePatient(request.Role);
 
-        var records = await _dbContext.HealthRecords
+        var query = _dbContext.HealthRecords
             .AsNoTracking()
-            .Where(x => x.PatientId == request.UserId)
+            .Where(x => x.PatientId == request.UserId);
+
+        if (request.Type.HasValue)
+        {
+            query = query.Where(x => x.Type == request.Type.Value);
+        }
+
+        var records = await query
             .OrderByDescending(x => x.RecordedAt)
-            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.RecordedAt, x.Notes))
+            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.Unit, x.RecordedAt, x.Notes))
             .ToListAsync(cancellationToken);
 
         return ApiResponse<List<HealthRecordDto>>.Ok(records);

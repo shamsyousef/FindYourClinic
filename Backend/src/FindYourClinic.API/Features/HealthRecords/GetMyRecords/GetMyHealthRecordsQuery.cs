@@ -9,4 +9,5 @@ public class GetMyHealthRecordsQuery : IRequest<ApiResponse<List<HealthRecordDto
 {
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }
+    public HealthRecordType? Type { get; set; }
 }
