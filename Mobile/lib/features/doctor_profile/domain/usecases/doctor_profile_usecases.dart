@@ -25,3 +25,19 @@ class GetDoctorAvailabilityUseCase {
   Future<ApiResult<List<AvailabilitySlot>>> call(String doctorId) =>
       _repository.getDoctorAvailability(doctorId);
 }
+
+class UpdateDoctorProfileUseCase {
+  final DoctorProfileRepository _repository;
+  const UpdateDoctorProfileUseCase(this._repository);
+
+  Future<ApiResult<void>> call(UpdateDoctorProfileParams params) =>
+      _repository.updateDoctorProfile(params);
+}
+
+class AddReviewUseCase {
+  final DoctorProfileRepository _repository;
+  const AddReviewUseCase(this._repository);
+
+  Future<ApiResult<void>> call(String doctorId, int rating, String? comment) =>
+      _repository.addReview(doctorId, rating, comment);
+}

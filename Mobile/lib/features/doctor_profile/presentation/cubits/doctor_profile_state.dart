@@ -24,3 +24,14 @@ class DoctorProfileError extends DoctorProfileState {
   final String message;
   const DoctorProfileError(this.message);
 }
+
+class DoctorProfileReviewSuccess extends DoctorProfileState {
+  final DoctorProfileLoaded loaded;
+  const DoctorProfileReviewSuccess(this.loaded);
+}
+
+class DoctorProfileReviewError extends DoctorProfileState {
+  final String message;
+  final DoctorProfileLoaded loaded;
+  const DoctorProfileReviewError(this.message, this.loaded);
+}

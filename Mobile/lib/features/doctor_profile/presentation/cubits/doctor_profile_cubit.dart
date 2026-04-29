@@ -8,14 +8,17 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
   final GetDoctorDetailsUseCase _getDetailsUseCase;
   final GetDoctorReviewsUseCase _getReviewsUseCase;
   final GetDoctorAvailabilityUseCase _getAvailabilityUseCase;
+  final AddReviewUseCase _addReviewUseCase;
 
   DoctorProfileCubit({
     required GetDoctorDetailsUseCase getDetailsUseCase,
     required GetDoctorReviewsUseCase getReviewsUseCase,
     required GetDoctorAvailabilityUseCase getAvailabilityUseCase,
+    required AddReviewUseCase addReviewUseCase,
   })  : _getDetailsUseCase = getDetailsUseCase,
         _getReviewsUseCase = getReviewsUseCase,
         _getAvailabilityUseCase = getAvailabilityUseCase,
+        _addReviewUseCase = addReviewUseCase,
         super(DoctorProfileInitial());
 
   Future<void> loadProfile(String doctorId) async {
@@ -46,6 +49,31 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
         ));
       case Error(:final failure):
         emit(DoctorProfileError(failure.message));
+    }
+  }
+
+  Future<void> addReview(
+      String doctorId, int rating, String? comment) async {
+    final current = state;
+    if (current is! DoctorProfileLoaded) return;
+    final result = await _addReviewUseCase(doctorId, rating, comment);
+    switch (result) {
+      case Success():
+        emit(DoctorProfileReviewSuccess(current));
+        // Reload reviews
+        final reviewsResult = await _getReviewsUseCase(doctorId);
+        final reviews = switch (reviewsResult) {
+          Success(:final data) => data,
+          Error() => current.reviews,
+        };
+        emit(DoctorProfileLoaded(
+          details: current.details,
+          reviews: reviews,
+          availability: current.availability,
+        ));
+      case Error(:final failure):
+        emit(DoctorProfileReviewError(failure.message, current));
+        emit(current);
     }
   }
 }

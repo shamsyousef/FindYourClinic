@@ -1,5 +1,5 @@
-/// Domain entities for doctor profile detail view.
-/// Pure Dart — no Flutter imports.
+// Domain entities for doctor profile detail view.
+// Pure Dart — no Flutter imports.
 
 class DoctorDetails {
   final String doctorId;
@@ -64,5 +64,25 @@ class AvailabilitySlot {
     required this.dayOfWeek,
     required this.startTime,
     required this.endTime,
+  });
+}
+
+class UpdateDoctorProfileParams {
+  final String? bio;
+  final String? clinicName;
+  final String? clinicAddress;
+  final double? latitude;
+  final double? longitude;
+  final double? consultationFee;
+  final int? experienceYears;
+
+  const UpdateDoctorProfileParams({
+    this.bio,
+    this.clinicName,
+    this.clinicAddress,
+    this.latitude,
+    this.longitude,
+    this.consultationFee,
+    this.experienceYears,
   });
 }
