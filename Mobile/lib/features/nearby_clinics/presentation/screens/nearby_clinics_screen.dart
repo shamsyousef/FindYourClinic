@@ -54,7 +54,7 @@ class _NearbyClinicsScreenState extends State<NearbyClinicsScreen> {
                   options: MapOptions(
                     initialCenter: LatLng(lat, lng),
                     initialZoom: 13,
-                    onTap: (_, _p) => setState(() => _selectedClinic = null),
+                    onTap: (_, p) => setState(() => _selectedClinic = null),
                   ),
                   children: [
                     TileLayer(

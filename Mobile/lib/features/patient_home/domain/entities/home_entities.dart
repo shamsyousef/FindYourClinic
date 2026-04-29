@@ -1,5 +1,5 @@
-/// Domain entities for the patient home dashboard.
-/// Pure Dart — no Flutter imports.
+// Domain entities for the patient home dashboard.
+// Pure Dart — no Flutter imports.
 
 class HomeSummary {
   final UpcomingAppointment? upcomingAppointment;
@@ -56,6 +56,7 @@ class TopDoctor {
   final double consultationFee;
   final double? latitude;
   final double? longitude;
+  final String? profileImageUrl;
 
   const TopDoctor({
     required this.doctorId,
@@ -66,6 +67,7 @@ class TopDoctor {
     required this.consultationFee,
     this.latitude,
     this.longitude,
+    this.profileImageUrl,
   });
 }
 

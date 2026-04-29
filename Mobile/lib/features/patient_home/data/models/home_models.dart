@@ -115,6 +115,7 @@ class TopDoctorModel {
   final double consultationFee;
   final double? latitude;
   final double? longitude;
+  final String? profileImageUrl;
 
   const TopDoctorModel({
     required this.doctorId,
@@ -125,6 +126,7 @@ class TopDoctorModel {
     required this.consultationFee,
     this.latitude,
     this.longitude,
+    this.profileImageUrl,
   });
 
   factory TopDoctorModel.fromJson(Map<String, dynamic> json) {
@@ -137,6 +139,7 @@ class TopDoctorModel {
       consultationFee: (json['consultationFee'] as num).toDouble(),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
+      profileImageUrl: json['profileImageUrl'] as String?,
     );
   }
 
@@ -149,6 +152,7 @@ class TopDoctorModel {
         consultationFee: consultationFee,
         latitude: latitude,
         longitude: longitude,
+        profileImageUrl: profileImageUrl,
       );
 }
 

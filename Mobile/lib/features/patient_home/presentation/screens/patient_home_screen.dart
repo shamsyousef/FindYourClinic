@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../notifications/presentation/cubits/notification_badge_cubit.dart';
+import '../../../notifications/presentation/cubits/notification_badge_state.dart';
 import '../cubits/patient_home_cubit.dart';
 import '../cubits/patient_home_state.dart';
 import '../widgets/greeting_header.dart';
@@ -65,9 +67,26 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         child: SafeArea(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                            child: GreetingHeader(
-                              onNotificationTap: () =>
-                                  context.pushNamed('notifications'),
+                            child: BlocBuilder<NotificationBadgeCubit,
+                                NotificationBadgeState>(
+                              builder: (context, badgeState) {
+                                final count = badgeState
+                                        is NotificationBadgeLoaded
+                                    ? badgeState.unreadCount
+                                    : 0;
+                                return GreetingHeader(
+                                  unreadNotificationCount: count,
+                                  onNotificationTap: () => context
+                                      .pushNamed('notifications')
+                                      .then((_) {
+                                    if (context.mounted) {
+                                      context
+                                          .read<NotificationBadgeCubit>()
+                                          .loadUnreadCount();
+                                    }
+                                  }),
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -130,7 +149,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         itemCount: summary.specialties.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        separatorBuilder: (_, _) => const SizedBox(width: 12),
                         itemBuilder: (context, index) {
                           final s = summary.specialties[index];
                           return SpecialtyChip(
@@ -203,7 +222,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         itemCount: summary.topDoctors.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 14),
+                        separatorBuilder: (_, _) => const SizedBox(width: 14),
                         itemBuilder: (context, index) {
                           final doctor = summary.topDoctors[index];
                           return TopDoctorCard(

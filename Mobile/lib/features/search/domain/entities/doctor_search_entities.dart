@@ -1,5 +1,5 @@
-/// Domain entities for doctor search.
-/// Pure Dart — no Flutter imports.
+// Domain entities for doctor search.
+// Pure Dart — no Flutter imports.
 
 class DoctorSearchResult {
   final String doctorId;
@@ -40,6 +40,7 @@ class DoctorSearchResult {
 }
 
 class SearchFilters {
+  final String? name;
   final String? specialtyId;
   final double? lat;
   final double? lng;
@@ -52,6 +53,7 @@ class SearchFilters {
   final int pageSize;
 
   const SearchFilters({
+    this.name,
     this.specialtyId,
     this.lat,
     this.lng,
@@ -65,6 +67,7 @@ class SearchFilters {
   });
 
   SearchFilters copyWith({
+    String? name,
     String? specialtyId,
     double? lat,
     double? lng,
@@ -77,6 +80,7 @@ class SearchFilters {
     int? pageSize,
   }) {
     return SearchFilters(
+      name: name ?? this.name,
       specialtyId: specialtyId ?? this.specialtyId,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
@@ -92,6 +96,7 @@ class SearchFilters {
 
   Map<String, String> toQueryParameters() {
     final params = <String, String>{};
+    if (name != null && name!.isNotEmpty) params['name'] = name!;
     if (specialtyId != null) params['specialtyId'] = specialtyId!;
     if (lat != null) params['lat'] = lat.toString();
     if (lng != null) params['lng'] = lng.toString();

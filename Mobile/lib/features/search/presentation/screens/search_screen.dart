@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,8 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -43,7 +46,21 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final cubit = context.read<SearchCubit>();
+      final currentFilters = switch (cubit.state) {
+        SearchLoaded(:final filters) => filters,
+        _ => const SearchFilters(),
+      };
+      cubit.search(currentFilters.copyWith(name: query.trim(), page: 1));
+    });
   }
 
   @override
@@ -59,8 +76,26 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: BlocBuilder<SearchCubit, SearchState>(
-        builder: (context, state) => switch (state) {
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Search by doctor name...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          Expanded(
+            child: BlocBuilder<SearchCubit, SearchState>(
+              builder: (context, state) => switch (state) {
           SearchInitial() || SearchLoading() => const Center(
               child: CircularProgressIndicator(),
             ),
@@ -81,7 +116,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
                     itemCount: result.items.length + (state is SearchLoadingMore ? 1 : 0),
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       if (index >= result.items.length) {
                         return const Center(
@@ -101,10 +136,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       );
                     },
                   ),
-        },
-      ),
-    );
-  }
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   void _showFilters(BuildContext context) {
     final cubit = context.read<SearchCubit>();
