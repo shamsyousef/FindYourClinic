@@ -34,11 +34,13 @@ public class GetMyAppointmentsQueryHandler : IRequestHandler<GetMyAppointmentsQu
                 x.Id,
                 x.PatientId,
                 x.DoctorProfileId,
+                x.DoctorProfile.UserId,
                 x.ScheduledAt,
                 x.LocationName,
                 x.Status,
                 x.CreatedAt,
                 $"{x.DoctorProfile.User.FirstName} {x.DoctorProfile.User.LastName}".Trim(),
+                x.DoctorProfile.User.ProfileImageUrl,
                 x.DoctorProfile.Specialty.Name))
             .ToListAsync(cancellationToken);
 

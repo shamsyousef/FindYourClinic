@@ -95,11 +95,13 @@ public class BookAppointmentCommandHandler : IRequestHandler<BookAppointmentComm
             appointment.Id,
             appointment.PatientId,
             appointment.DoctorProfileId,
+            doctorProfile.UserId,
             appointment.ScheduledAt,
             appointment.LocationName,
             appointment.Status.ToString(),
             appointment.CreatedAt,
             $"{doctorProfile.User.FirstName} {doctorProfile.User.LastName}".Trim(),
+            doctorProfile.User.ProfileImageUrl,
             doctorProfile.Specialty?.Name);
 
         return ApiResponse<AppointmentDto>.Ok(dto, "Appointment booked.");

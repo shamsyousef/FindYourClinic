@@ -3,6 +3,7 @@ using FindYourClinic.API.Features.Appointments.BookAppointment;
 using FindYourClinic.API.Features.Appointments.CancelAppointment;
 using FindYourClinic.API.Features.Appointments.CompleteAppointment;
 using FindYourClinic.API.Features.Appointments.ConfirmAppointment;
+using FindYourClinic.API.Features.Appointments.GetAppointmentById;
 using FindYourClinic.API.Features.Appointments.GetDoctorAppointments;
 using FindYourClinic.API.Features.Appointments.GetMyAppointments;
 using MediatR;
@@ -42,6 +43,18 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _mediator.Send(new GetMyAppointmentsQuery
         {
+            UserId = UserContext.GetRequiredUserId(User),
+            Role = UserContext.GetRequiredRole(User)
+        }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAppointmentByIdQuery
+        {
+            AppointmentId = id,
             UserId = UserContext.GetRequiredUserId(User),
             Role = UserContext.GetRequiredRole(User)
         }, cancellationToken);

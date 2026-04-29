@@ -42,6 +42,11 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
             throw new BadRequestException("Completed appointments cannot be cancelled.");
         }
 
+        if (appointment.ScheduledAt <= DateTime.UtcNow.AddHours(24))
+        {
+            throw new BadRequestException("Appointments cannot be cancelled within 24 hours of the scheduled time.");
+        }
+
         appointment.Status = AppointmentStatus.Cancelled;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
