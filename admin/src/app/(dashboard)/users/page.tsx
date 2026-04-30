@@ -1,43 +1,68 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Search, Power, FileText } from 'lucide-react';
 import api from '@/lib/api';
-import { Search } from 'lucide-react';
+import DocumentsDrawer from '@/components/DocumentsDrawer';
+
+interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+  doctorId: string | null;
+}
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [drawerUserId, setDrawerUserId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await api.get('/admin/users');
-        setUsers(response.data.data || []);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUsers();
+    api.get('/admin/users')
+      .then((res) => setUsers(res.data.data?.items ?? res.data.data ?? []))
+      .catch((err) => console.error('Error fetching users:', err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const requestAvailability = async (doctorId: string) => {
     try {
       await api.post(`/admin/doctors/${doctorId}/request-availability`);
       alert('Availability request sent successfully.');
-    } catch (error) {
-      console.error('Error requesting availability:', error);
+    } catch {
       alert('Failed to send availability request.');
     }
   };
 
+  const handleToggleActive = async (user: User) => {
+    setTogglingId(user.id);
+    try {
+      let newIsActive: boolean;
+      if (user.role === 'Doctor' && user.doctorId) {
+        const res = await api.post(`/admin/doctors/${user.doctorId}/toggle-active`);
+        newIsActive = res.data.data?.isActive ?? !user.isActive;
+      } else {
+        const res = await api.post(`/admin/users/${user.id}/toggle-active`);
+        newIsActive = res.data.data?.isActive ?? !user.isActive;
+      }
+      setUsers((prev) =>
+        prev.map((u) => u.id === user.id ? { ...u, isActive: newIsActive } : u)
+      );
+    } catch {
+      alert('Failed to update user status.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch =
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'All' || user.role === roleFilter;
     return matchesSearch && matchesRole;
@@ -109,8 +134,8 @@ export default function UsersPage() {
                     <td className="px-6 py-4 text-gray-400">{user.email}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-medium border ${
-                        user.role === 'Doctor' 
-                          ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' 
+                        user.role === 'Doctor'
+                          ? 'bg-teal-500/10 text-teal-400 border-teal-500/20'
                           : user.role === 'Admin'
                             ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                             : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
@@ -120,7 +145,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-2 ${user.isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${user.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
                         <span className={user.isActive ? 'text-gray-300' : 'text-gray-500'}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -130,14 +155,39 @@ export default function UsersPage() {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {user.role === 'Doctor' && (
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => requestAvailability(user.id)}
-                          className="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"
+                          onClick={() => setDrawerUserId(user.id)}
+                          className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700 rounded-lg transition-colors"
+                          title="View documents"
                         >
-                          Request Availability
+                          <FileText className="w-4 h-4" />
                         </button>
-                      )}
+
+                        {user.role !== 'Admin' && (
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            disabled={togglingId === user.id}
+                            title={user.isActive ? 'Deactivate user' : 'Activate user'}
+                            className={`p-2 border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                              user.isActive
+                                ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border-red-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border-emerald-500/20'
+                            }`}
+                          >
+                            <Power className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {user.role === 'Doctor' && user.doctorId && (
+                          <button
+                            onClick={() => requestAvailability(user.doctorId!)}
+                            className="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"
+                          >
+                            Request Availability
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -146,6 +196,8 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+
+      <DocumentsDrawer userId={drawerUserId} onClose={() => setDrawerUserId(null)} />
     </div>
   );
 }
