@@ -1,4 +1,5 @@
 using FindYourClinic.Domain.Common;
+using FindYourClinic.Domain.Enums;
 using FindYourClinic.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,9 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<P
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        var query = _dbContext.Users.AsNoTracking().OrderByDescending(u => u.CreatedAt);
+        var query = _dbContext.Users
+            .AsNoTracking()
+            .OrderByDescending(u => u.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -33,7 +36,8 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<P
                 FullName = $"{u.FirstName} {u.LastName}".Trim(),
                 Role = u.Role.ToString(),
                 IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
+                CreatedAt = u.CreatedAt,
+                DoctorId = u.Role == UserRole.Doctor ? u.Id : (Guid?)null
             })
             .ToListAsync(cancellationToken);
 
