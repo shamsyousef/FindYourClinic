@@ -30,6 +30,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<DoctorReview> DoctorReviews => Set<DoctorReview>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -192,6 +193,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(x => new { x.UserId, x.CreatedAt });
             entity.HasIndex(x => new { x.UserId, x.IsRead });
+        });
+
+        builder.Entity<AiChatMessage>(entity =>
+        {
+            entity.Property(x => x.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(x => x.Role).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Content).HasMaxLength(8000).IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.CreatedAt });
         });
     }
 
