@@ -34,6 +34,18 @@ public class EmailService : IEmailService
         return SendEmailAsync(toEmail, "Doctor Account Rejected", body);
     }
 
+    public Task SendDoctorActivatedEmailAsync(string toEmail, string doctorName)
+    {
+        var body = $"Hello {doctorName}, your Find Your Clinic account has been activated. You can now receive appointments.";
+        return SendEmailAsync(toEmail, "Your Find Your Clinic account has been activated", body);
+    }
+
+    public Task SendDoctorDeactivatedEmailAsync(string toEmail, string doctorName)
+    {
+        var body = $"Hello {doctorName}, your Find Your Clinic account has been deactivated by an administrator. Please contact support for more information.";
+        return SendEmailAsync(toEmail, "Your Find Your Clinic account has been deactivated", body);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false)
     {
         var message = new MimeMessage();

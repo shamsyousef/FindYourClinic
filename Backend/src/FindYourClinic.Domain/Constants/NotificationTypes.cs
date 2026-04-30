@@ -11,4 +11,6 @@ public static class NotificationTypes
     public const string AppointmentCompleted = "appointment_completed";
     public const string NewMessage = "new_message";
     public const string NewReview = "new_review";
+    public const string DoctorActivated = "doctor_activated";
+    public const string DoctorDeactivated = "doctor_deactivated";
 }

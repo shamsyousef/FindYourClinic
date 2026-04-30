@@ -25,6 +25,8 @@ public interface IEmailService
     Task SendPasswordResetEmailAsync(string toEmail, string resetLink);
     Task SendDoctorApprovedEmailAsync(string toEmail, string doctorName);
     Task SendDoctorRejectedEmailAsync(string toEmail, string doctorName, string reason);
+    Task SendDoctorActivatedEmailAsync(string toEmail, string doctorName);
+    Task SendDoctorDeactivatedEmailAsync(string toEmail, string doctorName);
 }
 
 public interface IGoogleAuthService
