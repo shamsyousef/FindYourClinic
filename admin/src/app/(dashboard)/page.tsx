@@ -20,12 +20,14 @@ export default function Dashboard() {
           api.get('/admin/doctors/pending'),
         ]);
 
-        const users = usersRes.data.data || [];
+        const usersData = usersRes.data.data;
+        const items: any[] = usersData?.items ?? usersData ?? [];
+        const totalUsers: number = usersData?.totalCount ?? items.length;
         const pendingDoctors = pendingDoctorsRes.data.data || [];
 
         setStats({
-          totalUsers: users.length,
-          totalDoctors: users.filter((u: any) => u.role === 'Doctor').length,
+          totalUsers,
+          totalDoctors: items.filter((u: any) => u.role === 'Doctor').length,
           pendingDoctors: pendingDoctors.length,
         });
       } catch (error) {
