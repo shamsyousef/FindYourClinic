@@ -9,11 +9,13 @@ class ApiEndpoints {
   static const googleLogin = '/api/auth/google';
   static const forgotPassword = '/api/auth/forgot-password';
   static const resetPassword = '/api/auth/reset-password';
+  static const changePassword = '/api/auth/change-password';
   static const refreshToken = '/api/auth/refresh-token';
   static const uploadDoctorDocuments = '/api/auth/doctor/upload-documents';
 
   // ─── Users ───
   static const userProfile = '/api/users/profile';
+  static const userProfileImage = '/api/users/profile/image';
 
   // ─── Notifications ───
   static const notifications = '/api/notifications';
@@ -75,6 +77,11 @@ class ApiEndpoints {
 
   // ─── Specialties ───
   static const specialties = '/api/specialties';
+
+  // ─── AI Health ───
+  static const aiChat = '/api/ai/chat';
+  static const aiChatHistory = '/api/ai/chat/history';
+  static const aiSymptomsAnalyze = '/api/ai/symptoms/analyze';
 
   // ─── SignalR ───
   static const chatHub = '/hubs/chat';
