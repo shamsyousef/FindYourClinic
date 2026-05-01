@@ -9,6 +9,7 @@ import '../../features/auth/domain/usecases/auth_usecases.dart';
 import '../../features/auth/presentation/cubits/auth_cubit.dart';
 import '../../features/doctor_onboarding/data/repos/onboarding_repository_impl.dart';
 import '../../features/doctor_onboarding/domain/repos/onboarding_repository.dart';
+import '../../features/doctor_onboarding/domain/usecases/get_my_documents_usecase.dart';
 import '../../features/doctor_onboarding/domain/usecases/upload_documents_usecase.dart';
 import '../../features/doctor_onboarding/presentation/cubits/onboarding_cubit.dart';
 import '../../features/auth/data/repos/specialty_repository_impl.dart';
@@ -84,6 +85,9 @@ import '../../features/patient_profile/data/repos/patient_profile_repository_imp
 import '../../features/patient_profile/domain/repos/patient_profile_repository.dart';
 import '../../features/patient_profile/domain/usecases/patient_profile_usecases.dart';
 import '../../features/patient_profile/presentation/cubits/patient_profile_cubit.dart';
+
+// Patient Card (doctor view)
+import '../../features/appointments/presentation/cubits/patient_card_cubit.dart';
 
 // Health Records
 import '../../features/health_records/data/repos/health_record_repository_impl.dart';
@@ -204,9 +208,13 @@ void _initOnboarding() {
   sl.registerLazySingleton<OnboardingRepository>(
     () => OnboardingRepositoryImpl(apiClient: sl<ApiClient>()),
   );
+  sl.registerFactory(() => GetMyDocumentsUseCase(sl<OnboardingRepository>()));
   sl.registerFactory(() => UploadDocumentsUseCase(sl<OnboardingRepository>()));
   sl.registerFactory(
-    () => OnboardingCubit(uploadDocumentsUseCase: sl<UploadDocumentsUseCase>()),
+    () => OnboardingCubit(
+      getMyDocumentsUseCase: sl<GetMyDocumentsUseCase>(),
+      uploadDocumentsUseCase: sl<UploadDocumentsUseCase>(),
+    ),
   );
 }
 
@@ -447,6 +455,9 @@ void _initPatientProfile() {
   );
   sl.registerFactory(() => GetPatientProfileUseCase(sl<PatientProfileRepository>()));
   sl.registerFactory(
+    () => GetPatientProfileForDoctorUseCase(sl<PatientProfileRepository>()),
+  );
+  sl.registerFactory(
     () => UpdatePatientProfileUseCase(sl<PatientProfileRepository>()),
   );
   sl.registerFactory(
@@ -474,6 +485,9 @@ void _initHealthRecords() {
   sl.registerFactory(() => UpdateHealthRecordUseCase(sl<HealthRecordRepository>()));
   sl.registerFactory(() => DeleteHealthRecordUseCase(sl<HealthRecordRepository>()));
   sl.registerFactory(
+    () => GetPatientRecordsForDoctorUseCase(sl<HealthRecordRepository>()),
+  );
+  sl.registerFactory(
     () => HealthRecordCubit(
       getRecordsUseCase: sl<GetHealthRecordsUseCase>(),
       getByIdUseCase: sl<GetHealthRecordByIdUseCase>(),
@@ -481,6 +495,12 @@ void _initHealthRecords() {
       createUseCase: sl<CreateHealthRecordUseCase>(),
       updateUseCase: sl<UpdateHealthRecordUseCase>(),
       deleteUseCase: sl<DeleteHealthRecordUseCase>(),
+    ),
+  );
+  sl.registerFactory(
+    () => PatientCardCubit(
+      getProfile: sl<GetPatientProfileForDoctorUseCase>(),
+      getRecords: sl<GetPatientRecordsForDoctorUseCase>(),
     ),
   );
 }

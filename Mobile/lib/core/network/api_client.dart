@@ -160,6 +160,7 @@ Failure mapDioException(DioException e) {
 
       if (statusCode == 401) return const AuthFailure();
       if (statusCode == 404) return NotFoundFailure(message);
+      if (statusCode == 503) return ServerFailure(message, statusCode: 503);
       if (statusCode == 422 || statusCode == 400) {
         return ValidationFailure(message, fieldErrors: null);
       }

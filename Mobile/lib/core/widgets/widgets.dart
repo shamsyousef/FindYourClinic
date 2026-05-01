@@ -154,7 +154,7 @@ class EmptyStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -172,7 +172,9 @@ class EmptyStateView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMd.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             if (buttonText != null) ...[
@@ -208,7 +210,9 @@ class ErrorView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMd.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[

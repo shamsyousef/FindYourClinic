@@ -19,6 +19,7 @@ class AppTheme {
           onPrimary: Colors.white,
           onSecondary: Colors.white,
           onSurface: AppColors.textPrimary,
+          onSurfaceVariant: AppColors.textSecondary,
           onError: Colors.white,
         ),
         scaffoldBackgroundColor: AppColors.scaffoldLight,
@@ -123,10 +124,16 @@ class AppTheme {
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.surfaceAlt,
           selectedColor: AppColors.primary,
+          secondarySelectedColor: AppColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.divider, width: 0.5),
           ),
-          labelStyle: AppTextStyles.labelSm,
+          labelStyle: AppTextStyles.labelSm.copyWith(color: AppColors.textPrimary),
+          secondaryLabelStyle:
+              AppTextStyles.labelSm.copyWith(color: Colors.white),
+          brightness: Brightness.light,
         ),
       );
 
@@ -143,6 +150,7 @@ class AppTheme {
           onPrimary: Colors.white,
           onSecondary: Colors.white,
           onSurface: AppColors.darkTextPrimary,
+          onSurfaceVariant: AppColors.darkTextSecondary,
           onError: Colors.white,
         ),
         scaffoldBackgroundColor: AppColors.darkBackground,
@@ -211,6 +219,10 @@ class AppTheme {
           ),
           hintStyle: AppTextStyles.bodyMd
               .copyWith(color: AppColors.darkTextSecondary),
+          labelStyle: AppTextStyles.label
+              .copyWith(color: AppColors.darkTextSecondary),
+          floatingLabelStyle:
+              AppTextStyles.label.copyWith(color: AppColors.primaryLight),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.darkSurface,
@@ -223,6 +235,21 @@ class AppTheme {
           color: AppColors.darkSurfaceAlt,
           thickness: 0.5,
           space: 0,
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: AppColors.darkSurfaceAlt,
+          selectedColor: AppColors.primaryLight,
+          secondarySelectedColor: AppColors.primaryLight,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: AppColors.darkSurfaceAlt, width: 0.5),
+          ),
+          labelStyle:
+              AppTextStyles.labelSm.copyWith(color: AppColors.darkTextPrimary),
+          secondaryLabelStyle:
+              AppTextStyles.labelSm.copyWith(color: Colors.white),
+          brightness: Brightness.dark,
         ),
       );
 

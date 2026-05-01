@@ -33,6 +33,7 @@ class RouteNames {
   static const doctorInsights = 'doctorInsights';
   static const doctorProfile = 'doctorProfile';
   static const doctorProfileEdit = 'doctorProfileEdit';
+  static const doctorProfileDocuments = 'doctorProfileDocuments';
 
   // Discovery & Detail
   static const search = 'search';

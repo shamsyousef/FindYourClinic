@@ -30,6 +30,7 @@ class ApiEndpoints {
   static String doctorWeeklySchedule(String id) => '/api/doctors/$id/weekly-schedule';
   static const updateDoctorProfile = '/api/doctors/profile';
   static const doctorMyStatus = '/api/doctors/me/status';
+  static const doctorMyDocuments = '/api/doctors/me/documents';
 
   // ─── Doctor Availability ───
   static String doctorSlots(String doctorId) =>
@@ -59,6 +60,10 @@ class ApiEndpoints {
   static const healthRecords = '/api/health-records';
   static String healthRecord(String id) => '/api/health-records/$id';
   static const healthSummary = '/api/health-records/summary';
+  static String patientHealthRecords(String patientId) => '/api/health-records/patient/$patientId';
+
+  // ─── Users (Doctor access) ───
+  static String patientProfileForDoctor(String patientId) => '/api/users/patient/$patientId';
 
   // ─── Messages ───
   static const conversations = '/api/messages/conversations';

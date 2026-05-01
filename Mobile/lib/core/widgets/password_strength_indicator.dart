@@ -88,7 +88,9 @@ class _RuleRow extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.labelSm.copyWith(
-            color: isMet ? AppColors.textPrimary : AppColors.textSecondary,
+            color: isMet 
+                ? Theme.of(context).colorScheme.onSurface 
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],

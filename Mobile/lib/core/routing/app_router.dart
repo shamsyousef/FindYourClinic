@@ -240,6 +240,14 @@ class AppRouter {
           child: const ManageAvailabilityScreen(),
         ),
       ),
+      GoRoute(
+        path: '/doctor/profile/documents',
+        name: RouteNames.doctorProfileDocuments,
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<OnboardingCubit>(),
+          child: const DoctorDocumentUploadScreen(pendingToken: ''),
+        ),
+      ),
 
       // ─── Appointment Detail ───
       GoRoute(
@@ -316,6 +324,7 @@ class AppRouter {
               specialty: extra['specialty'] as String,
               consultationFee: extra['consultationFee'] as String?,
               clinicName: extra['clinicName'] as String?,
+              doctorImageUrl: extra['doctorImageUrl'] as String?,
             ),
           );
         },
