@@ -34,3 +34,10 @@ public class BadRequestException : DomainException
     {
     }
 }
+
+public class ServiceUnavailableException : DomainException
+{
+    public ServiceUnavailableException(string message) : base(message)
+    {
+    }
+}

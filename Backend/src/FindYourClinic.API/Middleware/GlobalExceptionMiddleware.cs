@@ -56,6 +56,7 @@ public class GlobalExceptionMiddleware
             ForbiddenException => (HttpStatusCode.Forbidden, ex.Message),
             UnauthorizedException => (HttpStatusCode.Unauthorized, ex.Message),
             BadRequestException => (HttpStatusCode.BadRequest, ex.Message),
+            ServiceUnavailableException => (HttpStatusCode.ServiceUnavailable, ex.Message),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
         };
     }

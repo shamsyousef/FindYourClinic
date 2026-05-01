@@ -1,3 +1,5 @@
+using FindYourClinic.API.Common;
+using FindYourClinic.API.Features.Auth.ChangePassword;
 using FindYourClinic.API.Features.Auth.ForgotPassword;
 using FindYourClinic.API.Features.Auth.GoogleLogin;
 using FindYourClinic.API.Features.Auth.Login;
@@ -87,6 +89,15 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    {
+        command.UserId = UserContext.GetRequiredUserId(User);
+        var result = await _mediator.Send(command);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("refresh-token")]
