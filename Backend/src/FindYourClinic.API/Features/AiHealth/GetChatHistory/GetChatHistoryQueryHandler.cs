@@ -20,7 +20,7 @@ public class GetChatHistoryQueryHandler : IRequestHandler<GetChatHistoryQuery, L
             .Where(m => m.UserId == request.UserId)
             .OrderBy(m => m.CreatedAt)
             .Take(50)
-            .Select(m => new ChatMessageDto(m.Role, m.Content, m.CreatedAt))
+            .Select(m => new ChatMessageDto(m.Role, m.Content, DateTime.SpecifyKind(m.CreatedAt, DateTimeKind.Utc)))
             .ToListAsync(cancellationToken);
     }
 }

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using FindYourClinic.Domain.Exceptions;
 
 namespace FindYourClinic.API.Services;
 
@@ -25,7 +26,7 @@ public class GeminiService : IGeminiService
     {
         var apiKey = _configuration["Gemini:ApiKey"]
             ?? throw new InvalidOperationException("Gemini:ApiKey is not configured.");
-        var model = _configuration["Gemini:Model"] ?? "gemini-2.5-pro";
+        var model = _configuration["Gemini:Model"] ?? "gemini-2.5-flash";
 
         var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
@@ -53,7 +54,7 @@ public class GeminiService : IGeminiService
         var response = await client.PostAsync(url, httpContent);
 
         if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-            throw new InvalidOperationException("AI service is temporarily busy. Please wait a moment and try again.");
+            throw new ServiceUnavailableException("AI service quota exceeded. Please wait a moment and try again.");
 
         response.EnsureSuccessStatusCode();
 

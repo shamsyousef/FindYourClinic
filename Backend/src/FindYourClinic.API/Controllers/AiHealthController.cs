@@ -6,6 +6,7 @@ using FindYourClinic.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FindYourClinic.API.Controllers;
 
@@ -22,6 +23,7 @@ public class AiHealthController : ControllerBase
     }
 
     [HttpPost("chat")]
+    [EnableRateLimiting("ai_limited")]
     public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request, CancellationToken cancellationToken)
     {
         var userId = UserContext.GetRequiredUserId(User).ToString();
@@ -38,6 +40,7 @@ public class AiHealthController : ControllerBase
     }
 
     [HttpPost("symptoms/analyze")]
+    [EnableRateLimiting("ai_limited")]
     public async Task<IActionResult> AnalyzeSymptoms([FromBody] AnalyzeSymptomsCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
