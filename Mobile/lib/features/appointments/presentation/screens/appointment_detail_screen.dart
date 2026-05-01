@@ -3,18 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/di/service_locator.dart';
+import '../../../../core/network/api_result.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/user_avatar.dart';
+import '../../../chat/domain/usecases/start_conversation_usecase.dart';
 import '../../domain/entities/appointment_entity.dart';
 import '../cubits/appointment_cubit.dart';
 import '../cubits/appointment_state.dart';
+import '../cubits/patient_card_cubit.dart';
 import '../widgets/cancel_appointment_sheet.dart';
-import '../../../../core/network/api_result.dart';
-import '../../../../core/di/service_locator.dart';
-import '../../../chat/domain/usecases/start_conversation_usecase.dart';
+import '../widgets/patient_info_card.dart';
 
-/// Appointment detail screen — shows full appointment info
-/// with role-based actions and today's alert banner.
 class AppointmentDetailScreen extends StatefulWidget {
   final String appointmentId;
   final bool isDoctorView;
@@ -34,17 +35,17 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<AppointmentCubit>().loadAppointmentDetail(widget.appointmentId);
+    context
+        .read<AppointmentCubit>()
+        .loadAppointmentDetail(widget.appointmentId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Scaffold(
+    final body = Scaffold(
       appBar: AppBar(
-        title: const Text('Appointment Details'),
+        title: Text(
+            widget.isDoctorView ? 'Appointment Details' : 'My Appointment'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -55,36 +56,44 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           if (state is AppointmentActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.success,
-              ),
+                  content: Text(state.message),
+                  backgroundColor: AppColors.success),
             );
             context.pop(true);
           }
           if (state is AppointmentError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
+                  content: Text(state.message),
+                  backgroundColor: AppColors.error),
             );
           }
         },
         builder: (context, state) {
-          if (state is AppointmentLoading || state is AppointmentActionInProgress) {
+          if (state is AppointmentLoading ||
+              state is AppointmentActionInProgress) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (state is AppointmentDetailLoaded) {
-            return _buildDetail(context, state.appointment, theme, isDark);
+            if (widget.isDoctorView) {
+              // Trigger patient card load on first render
+              final cubit = context.read<PatientCardCubit>();
+              if (cubit.state is PatientCardInitial) {
+                cubit.load(state.appointment.patientId);
+              }
+            }
+            return _AppointmentDetailBody(
+              apt: state.appointment,
+              isDoctorView: widget.isDoctorView,
+            );
           }
-
           if (state is AppointmentError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                  const Icon(Icons.error_outline,
+                      size: 48, color: AppColors.error),
                   const SizedBox(height: 12),
                   Text(state.message),
                   const SizedBox(height: 12),
@@ -98,320 +107,169 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               ),
             );
           }
-
           return const SizedBox.shrink();
         },
       ),
     );
-  }
 
-  Widget _buildDetail(
-    BuildContext context,
-    AppointmentEntity apt,
-    ThemeData theme,
-    bool isDark,
-  ) {
+    if (!widget.isDoctorView) return body;
+
+    return BlocProvider(
+      create: (_) => sl<PatientCardCubit>(),
+      child: body,
+    );
+  }
+}
+
+class _AppointmentDetailBody extends StatelessWidget {
+  final AppointmentEntity apt;
+  final bool isDoctorView;
+
+  const _AppointmentDetailBody({
+    required this.apt,
+    required this.isDoctorView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final endTime = apt.scheduledAt.add(const Duration(minutes: 30));
-    final (statusLabel, statusColor) = switch (apt.status) {
-      AppointmentStatus.scheduled => ('Pending', AppColors.warning),
-      AppointmentStatus.confirmed => ('Confirmed', AppColors.success),
-      AppointmentStatus.cancelled => ('Cancelled', AppColors.error),
-      AppointmentStatus.completed => ('Completed', AppColors.textSecondary),
-    };
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ─── Today Banner ───
-          if (apt.isToday &&
-              apt.status != AppointmentStatus.cancelled &&
-              apt.status != AppointmentStatus.completed)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.warning.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.schedule, color: AppColors.warning, size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Appointment Today',
-                          style: AppTextStyles.label.copyWith(
-                            color: AppColors.warning,
-                          ),
-                        ),
-                        Text(
-                          'Your appointment is at ${DateFormat.jm().format(apt.scheduledAt)}. Please arrive 10 minutes early.',
-                          style: AppTextStyles.bodySm.copyWith(
-                            color: AppColors.warning,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          // 1. Doctor action banner (Accept/Decline/Complete)
+          if (isDoctorView) ...[
+            _ActionBanner(apt: apt),
+            const SizedBox(height: 12),
+          ],
 
-          // ─── Person Info Card ───
-          _card(
-            theme,
-            isDark,
+          // 2. Info card (Doctor or Patient)
+          _InfoCard(
             child: Row(
               children: [
-                _buildAvatar(apt),
+                _Avatar(
+                  name: apt.relatedPersonName,
+                  imageUrl: apt.relatedPersonImageUrl,
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        apt.relatedPersonName,
-                        style: AppTextStyles.heading3.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
+                      Text(apt.relatedPersonName,
+                          style: AppTextStyles.heading3),
                       if (apt.specialty != null)
                         Text(
                           apt.specialty!,
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style: AppTextStyles.bodySm
+                              .copyWith(color: AppColors.textSecondary),
+                        ),
+                      if (isDoctorView)
+                        Text(
+                          'Booking #${apt.id.substring(0, 8).toUpperCase()}',
+                          style: AppTextStyles.bodySm
+                              .copyWith(color: AppColors.textSecondary),
                         ),
                     ],
                   ),
                 ),
+                _StatusBadge(status: apt.effectiveStatus, isDoctor: isDoctorView),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 3. Large date/time block
+          _InfoCard(
+            child: Row(
+              children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: statusColor.withValues(alpha: 0.5)),
+                    color: AppColors.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    statusLabel,
-                    style: AppTextStyles.labelSm.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
+                  child: const Icon(Icons.calendar_today,
+                      color: AppColors.primary, size: 32),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('EEEE, MMM d').format(apt.scheduledAt),
+                      style: AppTextStyles.heading3,
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${DateFormat.jm().format(apt.scheduledAt)} — ${DateFormat.jm().format(endTime)}',
+                      style: AppTextStyles.bodyMd
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+
+          const SizedBox(height: 12),
+
+          // 4. Details
+          _InfoCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Details', style: AppTextStyles.label),
+                const SizedBox(height: 12),
+                if (apt.locationName != null)
+                  _InfoRow(Icons.location_on_outlined, 'Location',
+                      apt.locationName!),
+                _InfoRow(
+                    Icons.confirmation_number_outlined,
+                    'Booking Ref',
+                    '#${apt.id.substring(0, 8).toUpperCase()}'),
+                _InfoRow(Icons.event_note_outlined, 'Booked on',
+                    DateFormat.yMMMd().format(apt.createdAt)),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 16),
 
-          // ─── Appointment Information ───
-          _card(
-            theme,
-            isDark,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Appointment Information',
-                  style: AppTextStyles.label.copyWith(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _infoTile(
-                  Icons.calendar_today_outlined,
-                  'Date',
-                  DateFormat.yMMMMEEEEd().format(apt.scheduledAt),
-                  theme,
-                ),
-                _infoTile(
-                  Icons.access_time_outlined,
-                  'Time',
-                  '${DateFormat.jm().format(apt.scheduledAt)} — ${DateFormat.jm().format(endTime)} (30 minutes)',
-                  theme,
-                ),
-                if (apt.locationName != null)
-                  _infoTile(
-                    Icons.location_on_outlined,
-                    'Location',
-                    apt.locationName!,
-                    theme,
-                  ),
-                // Booking ID — hidden from patient
-                if (widget.isDoctorView)
-                  _infoTile(
-                    Icons.tag,
-                    'Booking ID',
-                    apt.id.substring(0, 8).toUpperCase(),
-                    theme,
-                  ),
-                _infoTile(
-                  Icons.event_note_outlined,
-                  'Booked on',
-                  DateFormat.yMMMd().format(apt.createdAt),
-                  theme,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ─── Actions ───
-          _buildActions(context, apt, theme),
-        ],
-      ),
-    );
-  }
-
-  Widget _card(ThemeData theme, bool isDark, {required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.darkSurfaceAlt : AppColors.divider,
-          width: 0.5,
-        ),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildAvatar(AppointmentEntity apt) {
-    final name = apt.relatedPersonName;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final colors = [
-      AppColors.primary,
-      AppColors.secondary,
-      const Color(0xFF8B5CF6),
-      const Color(0xFFEC4899),
-      const Color(0xFF06B6D4),
-    ];
-    final bgColor = colors[initial.codeUnitAt(0) % colors.length];
-
-    if (apt.relatedPersonImageUrl != null &&
-        apt.relatedPersonImageUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 28,
-        backgroundImage: NetworkImage(apt.relatedPersonImageUrl!),
-        backgroundColor: bgColor,
-      );
-    }
-
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: bgColor,
-      child: Text(
-        initial,
-        style: AppTextStyles.heading3.copyWith(
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _infoTile(
-    IconData icon,
-    String label,
-    String value,
-    ThemeData theme,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActions(
-    BuildContext context,
-    AppointmentEntity apt,
-    ThemeData theme,
-  ) {
-    if (widget.isDoctorView) {
-      // Doctor — no actions for completed or cancelled
-      if (apt.status == AppointmentStatus.completed ||
-          apt.status == AppointmentStatus.cancelled) {
-        return const SizedBox.shrink();
-      }
-      if (apt.status == AppointmentStatus.scheduled) {
-        return Column(
-          children: [
-            ElevatedButton(
-              onPressed: () => context
-                  .read<AppointmentCubit>()
-                  .confirmAppointment(apt.id),
-              child: const Text('Accept Appointment'),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton(
-              onPressed: () => context
-                  .read<AppointmentCubit>()
-                  .cancelAppointment(apt.id),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: const BorderSide(color: AppColors.error),
-              ),
-              child: const Text('Reject'),
-            ),
+          // 5. Patient info card (doctor only)
+          if (isDoctorView) ...[
+            const SizedBox(height: 16),
+            PatientInfoCard(patientId: apt.patientId),
+            const SizedBox(height: 4),
           ],
-        );
-      }
-      if (apt.status == AppointmentStatus.confirmed) {
-        return Column(
-          children: [
-            ElevatedButton(
-              onPressed: () => context
-                  .read<AppointmentCubit>()
-                  .completeAppointment(apt.id),
-              child: const Text('Mark Complete'),
+
+          // 6. Actions
+          if (!isDoctorView)
+            OutlinedButton.icon(
+              icon: const Icon(Icons.person_outline),
+              label: const Text('View Doctor Profile'),
+              onPressed: () => context.push(
+                '/doctor-details/${apt.doctorUserId}',
+                extra: {
+                  'canReview': apt.effectiveStatus == AppointmentStatus.completed,
+                  'canMessage': apt.effectiveStatus != AppointmentStatus.cancelled,
+                },
+              ),
+            ),
+
+          if (apt.effectiveStatus != AppointmentStatus.completed &&
+              apt.effectiveStatus != AppointmentStatus.cancelled) ...[
+            if (!isDoctorView) const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: () => _startConversation(
+                context,
+                isDoctorView ? apt.patientId : apt.doctorUserId,
+              ),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text(isDoctorView ? 'Message Patient' : 'Message Doctor'),
             ),
             const SizedBox(height: 10),
             TextButton(
@@ -422,86 +280,272 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     .read<AppointmentCubit>()
                     .cancelAppointment(apt.id),
               ),
-              child: Text(
-                'Cancel Appointment',
-                style: TextStyle(color: AppColors.error),
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('Cancel Appointment'),
             ),
           ],
-        );
-      }
-      return const SizedBox.shrink();
-    }
-
-    // Patient view — always show "View Doctor Profile"; conditionally show messaging/cancel
-    return Column(
-      children: [
-        if (apt.status != AppointmentStatus.completed &&
-            apt.status != AppointmentStatus.cancelled) ...[
-          ElevatedButton.icon(
-            onPressed: () => _startConversation(context, apt.doctorUserId),
-            icon: const Icon(Icons.chat_bubble_outline),
-            label: const Text('Message Doctor'),
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton(
-            onPressed: () => CancelAppointmentSheet.show(
-              context,
-              personName: apt.relatedPersonName,
-              onCancel: () => context
-                  .read<AppointmentCubit>()
-                  .cancelAppointment(apt.id),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-              side: const BorderSide(color: AppColors.error),
-            ),
-            child: const Text('Cancel Appointment'),
-          ),
-          const SizedBox(height: 10),
         ],
-        OutlinedButton.icon(
-          icon: const Icon(Icons.person_outline),
-          label: const Text('View Doctor Profile'),
-          onPressed: () => context.push(
-            '/doctor-details/${apt.doctorUserId}',
-            extra: {
-              'canReview': apt.status == AppointmentStatus.completed,
-              'canMessage': apt.status != AppointmentStatus.cancelled,
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  void _startConversation(BuildContext context, String counterpartyId) async {
+  void _startConversation(BuildContext context, String userId) async {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-
     try {
-      final startUc = sl<StartConversationUseCase>();
-      final result = await startUc(counterpartyId);
-      
+      final result = await sl<StartConversationUseCase>()(userId);
       if (context.mounted) Navigator.pop(context);
-
       switch (result) {
         case Success(:final data):
-          if (context.mounted) {
-            context.push('/chat/${data.id}');
-          }
+          if (context.mounted) context.push('/chat/${data.id}');
         case Error(:final failure):
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(failure.message), backgroundColor: AppColors.error),
+              SnackBar(
+                  content: Text(failure.message),
+                  backgroundColor: AppColors.error),
             );
           }
       }
-    } catch (e) {
+    } catch (_) {
       if (context.mounted) Navigator.pop(context);
     }
+  }
+}
+
+class _ActionBanner extends StatelessWidget {
+  final AppointmentEntity apt;
+  const _ActionBanner({required this.apt});
+
+  @override
+  Widget build(BuildContext context) {
+    if (apt.effectiveStatus == AppointmentStatus.scheduled) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withAlpha(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warning.withAlpha(80)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.pending_actions,
+                    color: AppColors.warning, size: 20),
+                const SizedBox(width: 8),
+                Text('Action Required',
+                    style: AppTextStyles.label
+                        .copyWith(color: AppColors.warning)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.success),
+                    onPressed: () => context
+                        .read<AppointmentCubit>()
+                        .confirmAppointment(apt.id),
+                    child: const Text('Accept'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                    ),
+                    onPressed: () => context
+                        .read<AppointmentCubit>()
+                        .cancelAppointment(apt.id),
+                    child: const Text('Decline'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (apt.effectiveStatus == AppointmentStatus.confirmed) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.success.withAlpha(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.success.withAlpha(80)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.check_circle_outline,
+                    color: AppColors.success, size: 20),
+                const SizedBox(width: 8),
+                Text('Appointment Confirmed',
+                    style: AppTextStyles.label
+                        .copyWith(color: AppColors.success)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary),
+                onPressed: () => context
+                    .read<AppointmentCubit>()
+                    .completeAppointment(apt.id),
+                child: const Text('Mark as Completed'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+}
+
+// ─────────────────────────────────────────────
+// Shared small widgets
+// ─────────────────────────────────────────────
+class _InfoCard extends StatelessWidget {
+  final Widget child;
+  const _InfoCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outline.withAlpha(40)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withAlpha(10),
+              blurRadius: 4,
+              offset: const Offset(0, 1)),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _InfoRow(this.icon, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withAlpha(20),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 16, color: AppColors.primary),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: 1),
+                Text(value,
+                    style: AppTextStyles.bodyMd
+                        .copyWith(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final AppointmentStatus status;
+  final bool isDoctor;
+  const _StatusBadge({required this.status, required this.isDoctor});
+
+  Color get _color => switch (status) {
+        AppointmentStatus.scheduled => AppColors.warning,
+        AppointmentStatus.confirmed => AppColors.success,
+        AppointmentStatus.cancelled => AppColors.error,
+        AppointmentStatus.completed => AppColors.textSecondary,
+      };
+
+  String get _label => isDoctor ? status.doctorLabel : status.patientLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: _color.withAlpha(25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _color.withAlpha(100)),
+      ),
+      child: Text(
+        _label,
+        style: AppTextStyles.labelSm.copyWith(
+          color: _color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  final String name;
+  final String? imageUrl;
+  const _Avatar({required this.name, this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    const colors = [
+      AppColors.primary,
+      AppColors.secondary,
+      Color(0xFF8B5CF6),
+      Color(0xFFEC4899),
+      Color(0xFF06B6D4),
+    ];
+    final bg = colors[initial.codeUnitAt(0) % colors.length];
+
+    return UserAvatar(
+      radius: 26,
+      imageUrl: imageUrl,
+      fullName: name,
+      backgroundColor: bg,
+      textStyle: AppTextStyles.heading3.copyWith(color: Colors.white),
+    );
   }
 }

@@ -129,19 +129,19 @@ class AppointmentCubit extends Cubit<AppointmentState> {
 
     final upcoming = all
         .where((a) =>
-            (a.status == AppointmentStatus.scheduled ||
-                a.status == AppointmentStatus.confirmed) &&
+            (a.effectiveStatus == AppointmentStatus.scheduled ||
+                a.effectiveStatus == AppointmentStatus.confirmed) &&
             a.scheduledAt.isAfter(now))
         .toList()
       ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 
     final completed = all
-        .where((a) => a.status == AppointmentStatus.completed)
+        .where((a) => a.effectiveStatus == AppointmentStatus.completed)
         .toList()
       ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
 
     final cancelled = all
-        .where((a) => a.status == AppointmentStatus.cancelled)
+        .where((a) => a.effectiveStatus == AppointmentStatus.cancelled)
         .toList()
       ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
 

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/utils/date_utils.dart';
+
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_result.dart';
@@ -96,7 +98,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         queryParameters: {'date': dateStr},
       );
       final data = response.data['data'] as List;
-      final slots = data.map((e) => DateTime.parse(e as String)).toList();
+      final slots = data.map((e) => parseServerDateTime(e as String)).toList();
       return Success(slots);
     } on DioException catch (e) {
       return Error(mapDioException(e));

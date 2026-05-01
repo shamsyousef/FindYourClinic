@@ -66,109 +66,114 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
           }
         },
         builder: (context, state) {
-          return CustomScrollView(
-            slivers: [
-              // ─── Gradient Header ───
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: isDark
-                        ? AppTheme.headerGradientDark
-                        : AppTheme.headerGradient,
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Appointments',
-                            style: AppTextStyles.heading1.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Search bar
-                          TextField(
-                            controller: _searchController,
-                            onChanged: (v) =>
-                                setState(() => _searchQuery = v.trim().toLowerCase()),
-                            style: AppTextStyles.bodyMd.copyWith(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Search patients...',
-                              prefixIcon: const Icon(Icons.search),
-                              filled: true,
-                              fillColor: theme.cardTheme.color,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+          return RefreshIndicator(
+            onRefresh: () =>
+                context.read<AppointmentCubit>().loadDoctorAppointments(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // ─── Gradient Header ───
+                SliverToBoxAdapter(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: isDark
+                          ? AppTheme.headerGradientDark
+                          : AppTheme.headerGradient,
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Appointments',
+                              style: AppTextStyles.heading1.copyWith(
+                                color: Colors.white,
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            // Search bar
+                            TextField(
+                              controller: _searchController,
+                              onChanged: (v) =>
+                                  setState(() => _searchQuery = v.trim().toLowerCase()),
+                              style: AppTextStyles.bodyMd.copyWith(
+                                color: theme.colorScheme.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Search patients...',
+                                prefixIcon: const Icon(Icons.search),
+                                filled: true,
+                                fillColor: theme.cardTheme.color,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-
-              // ─── Pill Tab Bar ───
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  child: Row(
-                    children: ['Upcoming', 'Past', 'All']
-                        .asMap()
-                        .entries
-                        .map((e) => _pillTab(e.key, e.value, theme))
-                        .toList(),
-                  ),
-                ),
-              ),
-
-              // ─── Content ───
-              if (state is AppointmentLoading ||
-                  state is AppointmentActionInProgress)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (state is AppointmentListLoaded)
-                _buildList(context, state, theme)
-              else if (state is AppointmentError)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error_outline,
-                            size: 48, color: AppColors.error),
-                        const SizedBox(height: 12),
-                        Text(state.message),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () => context
-                              .read<AppointmentCubit>()
-                              .loadDoctorAppointments(),
-                          child: const Text('Retry'),
-                        ),
-                      ],
+  
+                // ─── Pill Tab Bar ───
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Row(
+                      children: ['Upcoming', 'Past', 'All']
+                          .asMap()
+                          .entries
+                          .map((e) => _pillTab(e.key, e.value, theme))
+                          .toList(),
                     ),
                   ),
-                )
-              else
-                const SliverFillRemaining(child: SizedBox.shrink()),
-            ],
+                ),
+  
+                // ─── Content ───
+                if (state is AppointmentLoading ||
+                    state is AppointmentActionInProgress)
+                  const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (state is AppointmentListLoaded)
+                  _buildList(context, state, theme)
+                else if (state is AppointmentError)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline,
+                              size: 48, color: AppColors.error),
+                          const SizedBox(height: 12),
+                          Text(state.message),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () => context
+                                .read<AppointmentCubit>()
+                                .loadDoctorAppointments(),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  const SliverFillRemaining(child: SizedBox.shrink()),
+              ],
+            ),
           );
         },
       ),
@@ -250,23 +255,23 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
           return AppointmentCard(
             appointment: apt,
             isDoctorView: true,
-            onTap: () => context.push('/appointment/${apt.id}'),
-            onAccept: apt.status == AppointmentStatus.scheduled
+            onTap: () => context.push('/appointment/${apt.id}?doctor=true'),
+            onAccept: apt.effectiveStatus == AppointmentStatus.scheduled
                 ? () => context
                     .read<AppointmentCubit>()
                     .confirmAppointment(apt.id)
                 : null,
-            onReject: apt.status == AppointmentStatus.scheduled
+            onReject: apt.effectiveStatus == AppointmentStatus.scheduled
                 ? () => context
                     .read<AppointmentCubit>()
                     .cancelAppointment(apt.id)
                 : null,
-            onComplete: apt.status == AppointmentStatus.confirmed
+            onComplete: apt.effectiveStatus == AppointmentStatus.confirmed
                 ? () => context
                     .read<AppointmentCubit>()
                     .completeAppointment(apt.id)
                 : null,
-            onMessage: apt.status != AppointmentStatus.cancelled
+            onMessage: apt.effectiveStatus != AppointmentStatus.cancelled
                 ? () => _messagePatient(context, apt.patientId)
                 : null,
           );

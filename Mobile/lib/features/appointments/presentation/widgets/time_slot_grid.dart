@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/utils/date_utils.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -37,40 +39,44 @@ class TimeSlotGrid extends StatelessWidget {
         final slot = slots[index];
         final endSlot = slot.add(const Duration(minutes: 30));
         final isSelected = selectedSlot == slot;
+        final isPast = slot.isBefore(nowCairo());
 
         final startStr = DateFormat.jm().format(slot);
         final endStr = DateFormat.jm().format(endSlot);
 
-        return GestureDetector(
-          onTap: () => onSlotSelected(slot),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : isDark
-                      ? AppColors.darkSurfaceAlt
-                      : AppColors.surfaceAlt,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
+        return Opacity(
+          opacity: isPast ? 0.38 : 1.0,
+          child: GestureDetector(
+            onTap: isPast ? null : () => onSlotSelected(slot),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
                 color: isSelected
                     ? theme.colorScheme.primary
                     : isDark
                         ? AppColors.darkSurfaceAlt
-                        : AppColors.divider,
-                width: isSelected ? 1.5 : 1,
+                        : AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : isDark
+                          ? AppColors.darkSurfaceAlt
+                          : AppColors.divider,
+                  width: isSelected ? 1.5 : 1,
+                ),
               ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '$startStr — $endStr',
-              style: AppTextStyles.labelSm.copyWith(
-                color: isSelected
-                    ? Colors.white
-                    : theme.colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              alignment: Alignment.center,
+              child: Text(
+                '$startStr — $endStr',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: isSelected
+                      ? Colors.white
+                      : theme.colorScheme.onSurface,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
           ),
         );

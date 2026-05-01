@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../cubits/booking_cubit.dart';
 import '../cubits/booking_state.dart';
 import '../widgets/time_slot_grid.dart';
+import '../../../../core/widgets/user_avatar.dart';
 
 /// Book Appointment screen — single scroll with date picker → time slot → summary.
 class BookAppointmentScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class BookAppointmentScreen extends StatefulWidget {
   final String specialty;
   final String? consultationFee;
   final String? clinicName;
+  final String? doctorImageUrl;
 
   const BookAppointmentScreen({
     super.key,
@@ -26,6 +29,7 @@ class BookAppointmentScreen extends StatefulWidget {
     required this.specialty,
     this.consultationFee,
     this.clinicName,
+    this.doctorImageUrl,
   });
 
   @override
@@ -35,6 +39,7 @@ class BookAppointmentScreen extends StatefulWidget {
 class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   DateTime? _selectedDate;
   DateTime? _selectedSlot;
+  List<DateTime> _cachedSlots = [];
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       ),
       body: BlocConsumer<BookingCubit, BookingState>(
         listener: (context, state) {
+          if (state is BookingSlotsLoaded) {
+            setState(() => _cachedSlots = state.slots);
+          }
           if (state is BookingSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -67,14 +75,17 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 backgroundColor: AppColors.error,
               ),
             );
-            // If slot conflict, refresh slots
+            // If slot conflict, refresh slots for the selected date
             if (state.message.contains('already booked') &&
                 _selectedDate != null) {
               context.read<BookingCubit>().loadSlots(
-                doctorId: widget.doctorUserId, // user ID for slots endpoint
+                doctorId: widget.doctorUserId,
                 date: _selectedDate!,
               );
-              setState(() => _selectedSlot = null);
+              setState(() {
+                _selectedSlot = null;
+                _cachedSlots = [];
+              });
             }
           }
         },
@@ -172,16 +183,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
+          UserAvatar(
             radius: 24,
+            imageUrl: widget.doctorImageUrl,
+            fullName: widget.doctorName,
             backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-            child: Text(
-              widget.doctorName.isNotEmpty
-                  ? widget.doctorName[0].toUpperCase()
-                  : '?',
-              style: AppTextStyles.heading3.copyWith(
-                color: theme.colorScheme.primary,
-              ),
+            textStyle: AppTextStyles.heading3.copyWith(
+              color: theme.colorScheme.primary,
             ),
           ),
           const SizedBox(width: 14),
@@ -251,7 +259,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   }
 
   Widget _buildCalendar(BuildContext context, ThemeData theme, bool isDark) {
-    final now = DateTime.now();
+    final now = nowCairo();
     final firstDay = DateTime(now.year, now.month, now.day);
     final lastDay = firstDay.add(const Duration(days: 60));
 
@@ -272,9 +280,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           setState(() {
             _selectedDate = date;
             _selectedSlot = null;
+            _cachedSlots = [];
           });
           context.read<BookingCubit>().loadSlots(
-            doctorId: widget.doctorUserId, // user ID for slots endpoint
+            doctorId: widget.doctorUserId,
             date: date,
           );
         },
@@ -319,15 +328,15 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       );
     }
 
-    if (state is BookingSlotsLoaded) {
+    if (_cachedSlots.isNotEmpty) {
       return TimeSlotGrid(
-        slots: state.slots,
+        slots: _cachedSlots,
         selectedSlot: _selectedSlot,
         onSlotSelected: (slot) => setState(() => _selectedSlot = slot),
       );
     }
 
-    // Initial or error — show prompt
+    // Initial — show prompt
     return Center(
       child: Text(
         'Select a date to see available times',

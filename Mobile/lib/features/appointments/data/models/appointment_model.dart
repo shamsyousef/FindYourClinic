@@ -1,3 +1,4 @@
+import '../../../../core/utils/date_utils.dart';
 import '../../domain/entities/appointment_entity.dart';
 
 class AppointmentModel {
@@ -33,10 +34,10 @@ class AppointmentModel {
       patientId: json['patientId'],
       doctorProfileId: json['doctorProfileId'],
       doctorUserId: json['doctorUserId'],
-      scheduledAt: DateTime.parse(json['scheduledAt']),
+      scheduledAt: parseServerDateTime(json['scheduledAt']),
       locationName: json['locationName'],
       status: json['status'] ?? 'Scheduled',
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: parseServerDateTime(json['createdAt']),
       relatedPersonName: json['relatedPersonName'] ?? '',
       relatedPersonImageUrl: json['relatedPersonImageUrl'],
       specialty: json['specialty'],

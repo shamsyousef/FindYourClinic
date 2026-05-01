@@ -144,8 +144,8 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen>
             onTap: () => context.push(
               '/appointment/${apt.id}',
             ),
-            onCancel: (apt.status == AppointmentStatus.scheduled ||
-                    apt.status == AppointmentStatus.confirmed)
+            onCancel: (apt.effectiveStatus == AppointmentStatus.scheduled ||
+                    apt.effectiveStatus == AppointmentStatus.confirmed)
                 ? () => CancelAppointmentSheet.show(
                       context,
                       personName: apt.relatedPersonName,

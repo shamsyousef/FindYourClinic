@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../domain/entities/appointment_entity.dart';
 
 /// Reusable appointment card used in both patient and doctor list screens.
@@ -89,8 +90,8 @@ class AppointmentCard extends StatelessWidget {
 
             // ─── Today banner ───
             if (appointment.isToday &&
-                appointment.status != AppointmentStatus.cancelled &&
-                appointment.status != AppointmentStatus.completed)
+                appointment.effectiveStatus != AppointmentStatus.cancelled &&
+                appointment.effectiveStatus != AppointmentStatus.completed)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding:
@@ -167,38 +168,25 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    final name = appointment.relatedPersonName;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final bgColor = _avatarColor(initial);
-
-    if (appointment.relatedPersonImageUrl != null &&
-        appointment.relatedPersonImageUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 22,
-        backgroundImage:
-            NetworkImage(appointment.relatedPersonImageUrl!),
-        backgroundColor: bgColor,
-      );
-    }
-
-    return CircleAvatar(
+    return UserAvatar(
       radius: 22,
-      backgroundColor: bgColor,
-      child: Text(
-        initial,
-        style: AppTextStyles.label.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
+      imageUrl: appointment.relatedPersonImageUrl,
+      fullName: appointment.relatedPersonName,
+      backgroundColor: _avatarColor(appointment.relatedPersonName.isNotEmpty
+          ? appointment.relatedPersonName[0].toUpperCase()
+          : '?'),
+      textStyle: AppTextStyles.label.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
 
   Widget _buildStatusBadge() {
     final label = isDoctorView
-        ? appointment.status.doctorLabel
-        : appointment.status.patientLabel;
-    final color = switch (appointment.status) {
+        ? appointment.effectiveStatus.doctorLabel
+        : appointment.effectiveStatus.patientLabel;
+    final color = switch (appointment.effectiveStatus) {
       AppointmentStatus.scheduled => AppColors.warning,
       AppointmentStatus.confirmed => AppColors.success,
       AppointmentStatus.cancelled => AppColors.error,
@@ -243,17 +231,17 @@ class AppointmentCard extends StatelessWidget {
 
   bool get _hasActions {
     if (isDoctorView) {
-      return appointment.status == AppointmentStatus.scheduled ||
-          appointment.status == AppointmentStatus.confirmed ||
+      return appointment.effectiveStatus == AppointmentStatus.scheduled ||
+          appointment.effectiveStatus == AppointmentStatus.confirmed ||
           onMessage != null;
     }
-    return appointment.status == AppointmentStatus.scheduled ||
-        appointment.status == AppointmentStatus.confirmed;
+    return appointment.effectiveStatus == AppointmentStatus.scheduled ||
+        appointment.effectiveStatus == AppointmentStatus.confirmed;
   }
 
   Widget _buildActions(ThemeData theme) {
     if (isDoctorView) {
-      if (appointment.status == AppointmentStatus.scheduled) {
+      if (appointment.effectiveStatus == AppointmentStatus.scheduled) {
         return Row(
           children: [
             Expanded(
@@ -299,7 +287,7 @@ class AppointmentCard extends StatelessWidget {
           ],
         );
       }
-      if (appointment.status == AppointmentStatus.confirmed) {
+      if (appointment.effectiveStatus == AppointmentStatus.confirmed) {
         return Row(
           children: [
             Expanded(
