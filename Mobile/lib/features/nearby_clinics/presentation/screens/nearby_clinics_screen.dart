@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../search/domain/entities/doctor_search_entities.dart';
 import '../cubits/nearby_clinics_cubit.dart';
@@ -117,14 +118,54 @@ class _NearbyClinicsScreenState extends State<NearbyClinicsScreen> {
         .map(
           (clinic) => Marker(
             point: LatLng(clinic.latitude!, clinic.longitude!),
-            width: 40,
-            height: 40,
+            width: 80,
+            height: 70,
             child: GestureDetector(
               onTap: () => setState(() => _selectedClinic = clinic),
-              child: const Icon(
-                Icons.local_hospital,
-                color: AppColors.primary,
-                size: 36,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withAlpha(80),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Dr. ${clinic.fullName.split(' ').first}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -158,11 +199,12 @@ class _ClinicCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            CircleAvatar(
+            UserAvatar(
               radius: 28,
+              imageUrl: clinic.profileImageUrl,
+              fullName: clinic.fullName,
               backgroundColor: AppColors.primary.withAlpha(20),
-              child: const Icon(Icons.local_hospital,
-                  color: AppColors.primary, size: 28),
+              textStyle: AppTextStyles.heading3.copyWith(color: AppColors.primary),
             ),
             const SizedBox(width: 14),
             Expanded(

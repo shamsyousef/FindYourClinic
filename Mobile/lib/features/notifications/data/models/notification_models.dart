@@ -1,3 +1,4 @@
+import '../../../../core/utils/date_utils.dart';
 import '../../domain/entities/notification_entity.dart';
 
 class AppNotificationModel {
@@ -24,7 +25,7 @@ class AppNotificationModel {
       body: json['body'] ?? json['message'] ?? '',
       type: json['type'],
       isRead: json['isRead'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: parseServerDateTime(json['createdAt']),
     );
   }
 

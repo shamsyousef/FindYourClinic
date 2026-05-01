@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../domain/entities/doctor_search_entities.dart';
 
 class DoctorListTile extends StatelessWidget {
@@ -32,10 +33,12 @@ class DoctorListTile extends StatelessWidget {
         child: Row(
           children: [
             // Avatar
-            CircleAvatar(
+            UserAvatar(
               radius: 28,
+              imageUrl: doctor.profileImageUrl,
+              fullName: doctor.fullName,
               backgroundColor: AppColors.primary.withAlpha(20),
-              child: const Icon(Icons.person, color: AppColors.primary, size: 28),
+              textStyle: AppTextStyles.heading3.copyWith(color: AppColors.primary),
             ),
             const SizedBox(width: 14),
             // Info
