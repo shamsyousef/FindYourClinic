@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
+import '../theme/theme_mode_cubit.dart';
 import '../utils/token_storage.dart';
 import '../../features/auth/data/repos/auth_repository_impl.dart';
 import '../../features/auth/domain/repos/auth_repository.dart';
@@ -90,6 +91,16 @@ import '../../features/health_records/domain/repos/health_record_repository.dart
 import '../../features/health_records/domain/usecases/health_record_usecases.dart';
 import '../../features/health_records/presentation/cubits/health_record_cubit.dart';
 
+// AI Health
+import '../../features/ai_health/data/datasources/ai_health_remote_datasource.dart';
+import '../../features/ai_health/data/repos/ai_health_repository_impl.dart';
+import '../../features/ai_health/domain/repos/ai_health_repository.dart';
+import '../../features/ai_health/domain/usecases/send_message_usecase.dart' as ai_send;
+import '../../features/ai_health/domain/usecases/get_chat_history_usecase.dart';
+import '../../features/ai_health/domain/usecases/analyze_symptoms_usecase.dart';
+import '../../features/ai_health/presentation/cubits/ai_chat_cubit.dart';
+import '../../features/ai_health/presentation/cubits/symptom_checker_cubit.dart';
+
 final sl = GetIt.instance;
 
 /// Initialize all dependencies. Called once at app startup.
@@ -99,6 +110,7 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton<ApiClient>(
     () => ApiClient(tokenStorage: sl<TokenStorage>()),
   );
+  sl.registerLazySingleton<ThemeModeCubit>(() => ThemeModeCubit());
 
   // ─── Auth Feature ───
   _initAuth();
@@ -141,6 +153,9 @@ Future<void> initServiceLocator() async {
 
   // ─── Health Records Feature ───
   _initHealthRecords();
+
+  // ─── AI Health Feature ───
+  _initAiHealth();
 }
 
 void _initAuth() {
@@ -158,6 +173,7 @@ void _initAuth() {
   sl.registerFactory(() => GoogleLoginUseCase(sl<AuthRepository>()));
   sl.registerFactory(() => ForgotPasswordUseCase(sl<AuthRepository>()));
   sl.registerFactory(() => ResetPasswordUseCase(sl<AuthRepository>()));
+  sl.registerFactory(() => ChangePasswordUseCase(sl<AuthRepository>()));
   sl.registerFactory(() => LogoutUseCase(sl<AuthRepository>()));
   sl.registerFactory(() => GetDoctorStatusUseCase(sl<AuthRepository>()));
 
@@ -169,6 +185,7 @@ void _initAuth() {
       googleLoginUseCase: sl<GoogleLoginUseCase>(),
       forgotPasswordUseCase: sl<ForgotPasswordUseCase>(),
       resetPasswordUseCase: sl<ResetPasswordUseCase>(),
+      changePasswordUseCase: sl<ChangePasswordUseCase>(),
       logoutUseCase: sl<LogoutUseCase>(),
       getDoctorStatusUseCase: sl<GetDoctorStatusUseCase>(),
     ),
@@ -246,9 +263,13 @@ void _initDoctorProfile() {
     () => UpdateDoctorProfileUseCase(sl<DoctorProfileRepository>()),
   );
   sl.registerFactory(
+    () => UpdateDoctorProfileImageUseCase(sl<DoctorProfileRepository>()),
+  );
+  sl.registerFactory(
     () => EditDoctorProfileCubit(
       getDetails: sl<GetDoctorDetailsUseCase>(),
       updateProfile: sl<UpdateDoctorProfileUseCase>(),
+      updateProfileImage: sl<UpdateDoctorProfileImageUseCase>(),
     ),
   );
   sl.registerFactory(
@@ -262,6 +283,7 @@ void _initDoctorProfile() {
   sl.registerFactory(
     () => DoctorShellProfileCubit(
       getProfile: sl<GetPatientProfileUseCase>(),
+      getDetails: sl<GetDoctorDetailsUseCase>(),
       getDashboard: sl<GetDoctorDashboardUseCase>(),
     ),
   );
@@ -428,9 +450,15 @@ void _initPatientProfile() {
     () => UpdatePatientProfileUseCase(sl<PatientProfileRepository>()),
   );
   sl.registerFactory(
+    () => UpdatePatientProfileImageUseCase(sl<PatientProfileRepository>()),
+  );
+  sl.registerFactory(
     () => PatientProfileCubit(
       getProfile: sl<GetPatientProfileUseCase>(),
       updateProfile: sl<UpdatePatientProfileUseCase>(),
+      updateProfileImage: sl<UpdatePatientProfileImageUseCase>(),
+      getAppointments: sl<GetPatientAppointmentsUseCase>(),
+      getHealthSummary: sl<GetHealthSummaryUseCase>(),
     ),
   );
 }
@@ -455,4 +483,20 @@ void _initHealthRecords() {
       deleteUseCase: sl<DeleteHealthRecordUseCase>(),
     ),
   );
+}
+
+void _initAiHealth() {
+  sl.registerLazySingleton<AiHealthRemoteDataSource>(
+    () => AiHealthRemoteDataSourceImpl(sl<ApiClient>()),
+  );
+  sl.registerLazySingleton<AiHealthRepository>(
+    () => AiHealthRepositoryImpl(dataSource: sl<AiHealthRemoteDataSource>()),
+  );
+  sl.registerFactory(() => ai_send.SendMessageUseCase(sl<AiHealthRepository>()));
+  sl.registerFactory(() => GetChatHistoryUseCase(sl<AiHealthRepository>()));
+  sl.registerFactory(() => AnalyzeSymptomsUseCase(sl<AiHealthRepository>()));
+  sl.registerFactory(
+    () => AiChatCubit(sl<ai_send.SendMessageUseCase>(), sl<GetChatHistoryUseCase>()),
+  );
+  sl.registerFactory(() => SymptomCheckerCubit(sl<AnalyzeSymptomsUseCase>()));
 }

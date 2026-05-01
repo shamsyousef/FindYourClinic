@@ -8,6 +8,7 @@ import '../utils/token_storage.dart';
 import '../../features/auth/presentation/cubits/auth_cubit.dart';
 import '../../features/auth/presentation/cubits/specialty_cubit.dart';
 import '../../features/auth/presentation/screens/doctor_rejected_screen.dart';
+import '../../features/auth/presentation/screens/change_password_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
@@ -32,6 +33,8 @@ import '../../features/doctor_profile/presentation/cubits/doctor_profile_cubit.d
 import '../../features/doctor_profile/presentation/cubits/edit_doctor_profile_cubit.dart';
 import '../../features/doctor_profile/presentation/screens/doctor_profile_screen.dart';
 import '../../features/doctor_profile/presentation/screens/doctor_edit_profile_screen.dart';
+import '../../features/doctor_profile/presentation/screens/doctor_shell_profile_screen.dart';
+import '../../features/doctor_profile/presentation/cubits/doctor_shell_profile_cubit.dart';
 import '../../features/nearby_clinics/presentation/cubits/nearby_clinics_cubit.dart';
 import '../../features/nearby_clinics/presentation/screens/nearby_clinics_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -60,6 +63,12 @@ import '../../features/health_records/presentation/cubits/health_record_cubit.da
 import '../../features/health_records/presentation/screens/health_records_screen.dart';
 import '../../features/health_records/presentation/screens/health_record_detail_screen.dart';
 import '../../features/health_records/presentation/screens/add_health_record_screen.dart';
+
+// AI Health
+import '../../features/ai_health/presentation/cubits/ai_chat_cubit.dart';
+import '../../features/ai_health/presentation/cubits/symptom_checker_cubit.dart';
+import '../../features/ai_health/presentation/screens/ai_chat_screen.dart';
+import '../../features/ai_health/presentation/screens/symptom_checker_screen.dart';
 
 part 'route_names.dart';
 
@@ -280,6 +289,16 @@ class AppRouter {
         builder: (context, state) => const SettingsScreen(),
       ),
 
+      // ─── Change Password (authenticated, not an auth page) ───
+      GoRoute(
+        path: '/change-password',
+        name: RouteNames.changePassword,
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<AuthCubit>(),
+          child: const ChangePasswordScreen(),
+        ),
+      ),
+
       // ─── Book Appointment ───
       GoRoute(
         path: '/book-appointment',
@@ -298,6 +317,24 @@ class AppRouter {
             ),
           );
         },
+      ),
+
+      // ─── AI Health ───
+      GoRoute(
+        path: '/patient/ai-chat',
+        name: RouteNames.aiChat,
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<AiChatCubit>()..loadHistory(),
+          child: const AiChatScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/patient/symptom-checker',
+        name: RouteNames.symptomChecker,
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<SymptomCheckerCubit>(),
+          child: const SymptomCheckerScreen(),
+        ),
       ),
 
       StatefulShellRoute.indexedStack(
@@ -355,8 +392,8 @@ class AppRouter {
                 GoRoute(
                   path: 'edit',
                   name: RouteNames.patientProfileEdit,
-                  builder: (context, state) => BlocProvider.value(
-                    value: context.read<PatientProfileCubit>(),
+                  builder: (context, state) => BlocProvider(
+                    create: (_) => sl<PatientProfileCubit>()..loadProfile(),
                     child: const EditPatientProfileScreen(),
                   ),
                 ),
@@ -413,10 +450,23 @@ class AppRouter {
             GoRoute(
               path: '/doctor/profile',
               name: RouteNames.doctorProfile,
-              builder: (context, state) => BlocProvider(
-                create: (_) => sl<EditDoctorProfileCubit>(),
-                child: const DoctorEditProfileScreen(),
+              pageBuilder: (context, state) => NoTransitionPage(
+                child: BlocProvider(
+                  create: (_) =>
+                      sl<DoctorShellProfileCubit>()..loadProfile(),
+                  child: const DoctorShellProfileScreen(),
+                ),
               ),
+              routes: [
+                GoRoute(
+                  path: 'edit',
+                  name: RouteNames.doctorProfileEdit,
+                  builder: (context, state) => BlocProvider(
+                    create: (_) => sl<EditDoctorProfileCubit>(),
+                    child: const DoctorEditProfileScreen(),
+                  ),
+                ),
+              ],
             ),
           ]),
         ],

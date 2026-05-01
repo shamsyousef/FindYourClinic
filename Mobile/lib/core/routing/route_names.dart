@@ -32,6 +32,7 @@ class RouteNames {
   static const doctorChat = 'doctorChat';
   static const doctorInsights = 'doctorInsights';
   static const doctorProfile = 'doctorProfile';
+  static const doctorProfileEdit = 'doctorProfileEdit';
 
   // Discovery & Detail
   static const search = 'search';
@@ -55,5 +56,10 @@ class RouteNames {
 
   // Settings
   static const settings = 'settings';
+  static const changePassword = 'changePassword';
+
+  // AI Health
+  static const aiChat = 'aiChat';
+  static const symptomChecker = 'symptomChecker';
 }
 
