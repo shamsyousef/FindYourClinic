@@ -1,5 +1,8 @@
+using FindYourClinic.API.Common;
+using FindYourClinic.API.Features.Users.GetPatientProfileForDoctor;
 using FindYourClinic.API.Features.Users.GetProfile;
 using FindYourClinic.API.Features.Users.UpdateProfile;
+using FindYourClinic.API.Features.Users.UpdateProfileImage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,9 +27,7 @@ public class UsersController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var parsedUserId))
-        {
             return Unauthorized();
-        }
 
         var result = await _mediator.Send(new GetProfileQuery { UserId = parsedUserId });
         return Ok(result);
@@ -37,19 +38,52 @@ public class UsersController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var parsedUserId))
-        {
             return Unauthorized();
-        }
 
-        var command = new UpdateProfileCommand
+        var result = await _mediator.Send(new UpdateProfileCommand
         {
             UserId = parsedUserId,
             FirstName = request.FirstName,
-            LastName = request.LastName
-        };
+            LastName = request.LastName,
+            PhoneNumber = request.PhoneNumber,
+            DateOfBirth = request.DateOfBirth,
+            Gender = request.Gender,
+            BloodType = request.BloodType,
+            Address = request.Address,
+            EmergencyContactName = request.EmergencyContactName,
+            EmergencyContactPhone = request.EmergencyContactPhone,
+        });
 
-        var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    [HttpGet("patient/{patientId:guid}")]
+    public async Task<IActionResult> GetPatientProfileForDoctor([FromRoute] Guid patientId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetPatientProfileForDoctorQuery
+        {
+            DoctorUserId = UserContext.GetRequiredUserId(User),
+            Role = UserContext.GetRequiredRole(User),
+            PatientId = patientId
+        }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("profile/image")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdateProfileImage([FromForm] IFormFile file)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var parsedUserId))
+            return Unauthorized();
+
+        var result = await _mediator.Send(new UpdateProfileImageCommand
+        {
+            UserId = parsedUserId,
+            File = file
+        });
+
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }
 
@@ -57,4 +91,11 @@ public class UpdateProfileRequest
 {
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? BloodType { get; set; }
+    public string? Address { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 }

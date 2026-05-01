@@ -29,7 +29,14 @@ public class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, ApiRespon
             FirstName = user.FirstName,
             LastName = user.LastName,
             Role = user.Role.ToString(),
-            ProfileImageUrl = user.ProfileImageUrl
+            ProfileImageUrl = user.ProfileImageUrl,
+            PhoneNumber = user.PhoneNumber,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender,
+            BloodType = user.BloodType,
+            Address = user.Address,
+            EmergencyContactName = user.EmergencyContactName,
+            EmergencyContactPhone = user.EmergencyContactPhone
         };
 
         return ApiResponse<UserProfileDto>.Ok(profile);
