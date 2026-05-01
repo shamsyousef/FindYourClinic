@@ -2,6 +2,7 @@ using FindYourClinic.API.Common;
 using FindYourClinic.API.Features.AiHealth.AnalyzeSymptoms;
 using FindYourClinic.API.Features.AiHealth.GetChatHistory;
 using FindYourClinic.API.Features.AiHealth.SendMessage;
+using FindYourClinic.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,7 @@ public class AiHealthController : ControllerBase
     {
         var userId = UserContext.GetRequiredUserId(User).ToString();
         var result = await _mediator.Send(new SendMessageCommand(userId, request.Content), cancellationToken);
-        return Ok(result);
+        return Ok(ApiResponse<SendMessageResult>.Ok(result));
     }
 
     [HttpGet("chat/history")]
@@ -33,14 +34,14 @@ public class AiHealthController : ControllerBase
     {
         var userId = UserContext.GetRequiredUserId(User).ToString();
         var result = await _mediator.Send(new GetChatHistoryQuery(userId), cancellationToken);
-        return Ok(result);
+        return Ok(ApiResponse<List<ChatMessageDto>>.Ok(result));
     }
 
     [HttpPost("symptoms/analyze")]
     public async Task<IActionResult> AnalyzeSymptoms([FromBody] AnalyzeSymptomsCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result);
+        return Ok(ApiResponse<SymptomAnalysisResult>.Ok(result));
     }
 
     public sealed class SendMessageRequest
