@@ -51,6 +51,10 @@ public class GeminiService : IGeminiService
         using var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await client.PostAsync(url, httpContent);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            throw new InvalidOperationException("AI service is temporarily busy. Please wait a moment and try again.");
+
         response.EnsureSuccessStatusCode();
 
         using var responseStream = await response.Content.ReadAsStreamAsync();
