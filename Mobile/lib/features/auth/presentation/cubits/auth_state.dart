@@ -26,6 +26,8 @@ class AuthPasswordResetSent extends AuthState {}
 
 class AuthPasswordResetSuccess extends AuthState {}
 
+class AuthPasswordChanged extends AuthState {}
+
 class AuthLoggedOut extends AuthState {}
 
 class AuthDoctorStatusLoaded extends AuthState {

@@ -11,6 +11,7 @@ class AuthCubit extends Cubit<AuthState> {
   final GoogleLoginUseCase _googleLoginUseCase;
   final ForgotPasswordUseCase _forgotPasswordUseCase;
   final ResetPasswordUseCase _resetPasswordUseCase;
+  final ChangePasswordUseCase _changePasswordUseCase;
   final LogoutUseCase _logoutUseCase;
   final GetDoctorStatusUseCase _getDoctorStatusUseCase;
 
@@ -20,6 +21,7 @@ class AuthCubit extends Cubit<AuthState> {
     required GoogleLoginUseCase googleLoginUseCase,
     required ForgotPasswordUseCase forgotPasswordUseCase,
     required ResetPasswordUseCase resetPasswordUseCase,
+    required ChangePasswordUseCase changePasswordUseCase,
     required LogoutUseCase logoutUseCase,
     required GetDoctorStatusUseCase getDoctorStatusUseCase,
   })  : _loginUseCase = loginUseCase,
@@ -27,6 +29,7 @@ class AuthCubit extends Cubit<AuthState> {
         _googleLoginUseCase = googleLoginUseCase,
         _forgotPasswordUseCase = forgotPasswordUseCase,
         _resetPasswordUseCase = resetPasswordUseCase,
+        _changePasswordUseCase = changePasswordUseCase,
         _logoutUseCase = logoutUseCase,
         _getDoctorStatusUseCase = getDoctorStatusUseCase,
         super(AuthInitial());
@@ -84,6 +87,23 @@ class AuthCubit extends Cubit<AuthState> {
     switch (result) {
       case Success():
         emit(AuthPasswordResetSent());
+      case Error(:final failure):
+        emit(AuthError(failure.message));
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    emit(AuthLoading());
+    final result = await _changePasswordUseCase(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+    switch (result) {
+      case Success():
+        emit(AuthPasswordChanged());
       case Error(:final failure):
         emit(AuthError(failure.message));
     }

@@ -143,6 +143,28 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<ApiResult<void>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.changePassword,
+        data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] != true) {
+        return Error(ServerFailure(body['message'] as String? ?? 'Failed to change password'));
+      }
+      return const Success(null);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (e) {
+      return Error(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<ApiResult<void>> resetPassword({
     required String token,
     required String newPassword,

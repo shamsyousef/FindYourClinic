@@ -114,7 +114,11 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/icons/app_logo.png', height: 96),
+                Image.asset(
+                  'assets/icons/app_logo.png',
+                  height: 180,
+                  fit: BoxFit.contain,
+                ),
                 const SizedBox(height: 24),
                 Text(
                   'Find Your Clinic',
