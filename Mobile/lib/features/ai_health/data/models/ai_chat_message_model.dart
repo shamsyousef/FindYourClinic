@@ -12,10 +12,13 @@ class AiChatMessageModel {
   });
 
   factory AiChatMessageModel.fromJson(Map<String, dynamic> json) {
+    final raw = json['createdAt'] as String;
+    final normalized =
+        (raw.endsWith('Z') || raw.contains('+')) ? raw : '${raw}Z';
     return AiChatMessageModel(
       role: json['role'] as String,
       content: json['content'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String).toLocal(),
+      createdAt: DateTime.parse(normalized).toLocal(),
     );
   }
 

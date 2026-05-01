@@ -51,8 +51,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.scaffoldLight,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.scaffoldLight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -120,41 +121,42 @@ class _AiChatScreenState extends State<AiChatScreen> {
               builder: (context, state) {
                 if (state is AiChatLoading) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   );
                 }
 
                 if (state is AiChatError) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.error,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          state.message,
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.textSecondary,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 48,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        OutlinedButton(
-                          onPressed: () =>
-                              context.read<AiChatCubit>().loadHistory(),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: const BorderSide(color: AppColors.primary),
+                          const SizedBox(height: 12),
+                          Text(
+                            state.message,
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          child: const Text('Retry'),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: () =>
+                                context.read<AiChatCubit>().loadHistory(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
+                            ),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -172,9 +174,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   children: [
                     if (messages.isEmpty && !isSending)
                       _buildWelcomeArea(isDark),
-                    ...messages.map(
-                      (msg) => AiMessageBubble(message: msg),
-                    ),
+                    ...messages.map((msg) => AiMessageBubble(message: msg)),
                     if (isSending) _buildTypingIndicator(isDark),
                   ],
                 );
@@ -246,9 +246,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
         side: const BorderSide(color: AppColors.primary),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       ),
       child: Text(text, style: AppTextStyles.bodySm),
@@ -314,9 +312,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
-        border: const Border(
-          top: BorderSide(color: AppColors.divider),
-        ),
+        border: const Border(top: BorderSide(color: AppColors.divider)),
       ),
       child: SafeArea(
         top: false,
@@ -335,14 +331,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 ),
                 decoration: InputDecoration(
                   hintText: 'Type your message...',
-                  hintStyle: AppTextStyles.bodyMd
-                      .copyWith(color: AppColors.textHint),
+                  hintStyle: AppTextStyles.bodyMd.copyWith(
+                    color: AppColors.textHint,
+                  ),
                   filled: true,
                   fillColor: isDark
                       ? AppColors.darkSurfaceAlt
                       : AppColors.scaffoldLight,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
@@ -352,9 +351,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             ),
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: _inputController.text.trim().isEmpty
-                  ? null
-                  : _sendMessage,
+              onTap: _inputController.text.trim().isEmpty ? null : _sendMessage,
               child: Container(
                 width: 44,
                 height: 44,
@@ -365,7 +362,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       : const LinearGradient(
                           colors: [
                             AppColors.gradientMiddle,
-                            AppColors.gradientEnd
+                            AppColors.gradientEnd,
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
