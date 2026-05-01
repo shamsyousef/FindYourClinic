@@ -16,6 +16,32 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
       : _apiClient = apiClient;
 
   @override
+  Future<ApiResult<List<UploadedDocument>>> getMyDocuments() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.doctorMyDocuments);
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] != true) {
+        return Error(
+          ServerFailure(body['message'] as String? ?? 'Failed to load documents'),
+        );
+      }
+
+      final list = (body['data'] as List).map((e) {
+        final map = e as Map<String, dynamic>;
+        return UploadedDocument(
+          documentType: map['documentType'] as String,
+          url: map['url'] as String,
+        );
+      }).toList();
+      return Success(list);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (e) {
+      return Error(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<ApiResult<List<UploadedDocument>>> uploadDocuments({
     required List<DoctorDocument> documents,
     required String pendingToken,
@@ -33,10 +59,14 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
         formData.fields.add(MapEntry('documentTypes', doc.documentType));
       }
 
+      final options = pendingToken.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $pendingToken'})
+          : null;
+
       final response = await _apiClient.dio.post(
         ApiEndpoints.uploadDoctorDocuments,
         data: formData,
-        options: Options(headers: {'Authorization': 'Bearer $pendingToken'}),
+        options: options,
       );
 
       final body = response.data as Map<String, dynamic>;

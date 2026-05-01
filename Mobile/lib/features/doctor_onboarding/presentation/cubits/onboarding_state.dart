@@ -6,6 +6,11 @@ class OnboardingInitial extends OnboardingState {}
 
 class OnboardingLoading extends OnboardingState {}
 
+class OnboardingDocumentsLoaded extends OnboardingState {
+  final List<UploadedDocument> documents;
+  OnboardingDocumentsLoaded(this.documents);
+}
+
 class OnboardingDocumentsUploaded extends OnboardingState {
   final List<UploadedDocument> documents;
   OnboardingDocumentsUploaded(this.documents);
