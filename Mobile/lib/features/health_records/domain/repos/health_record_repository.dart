@@ -3,6 +3,7 @@ import '../entities/health_record_entity.dart';
 
 abstract class HealthRecordRepository {
   Future<ApiResult<List<HealthRecordEntity>>> getRecords({HealthRecordType? type});
+  Future<ApiResult<List<HealthRecordEntity>>> getPatientRecordsForDoctor(String patientId);
   Future<ApiResult<HealthRecordEntity>> getRecordById(String id);
   Future<ApiResult<HealthSummaryEntity>> getSummary();
   Future<ApiResult<HealthRecordEntity>> createRecord({
@@ -12,6 +13,7 @@ abstract class HealthRecordRepository {
     String? unit,
     required DateTime recordedAt,
     String? notes,
+    String? attachmentPath,
   });
   Future<ApiResult<HealthRecordEntity>> updateRecord({
     required String id,

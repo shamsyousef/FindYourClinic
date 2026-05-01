@@ -103,7 +103,7 @@ class RecordListTile extends StatelessWidget {
             ? Text(
                 '${record.value}${record.unit != null ? ' ${record.unit}' : ''}',
                 style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: colorScheme.onSurfaceVariant,
                 ),
               )
             : null,
@@ -116,13 +116,13 @@ class RecordListTile extends StatelessWidget {
                 child: Icon(
                   Icons.attach_file,
                   size: 16,
-                  color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             Text(
               DateFormat('MMM d, y').format(record.recordedAt.toLocal()),
               style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],

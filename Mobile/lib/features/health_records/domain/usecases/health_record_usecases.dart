@@ -36,6 +36,7 @@ class CreateHealthRecordUseCase {
     String? unit,
     required DateTime recordedAt,
     String? notes,
+    String? attachmentPath,
   }) =>
       _repository.createRecord(
         title: title,
@@ -44,6 +45,7 @@ class CreateHealthRecordUseCase {
         unit: unit,
         recordedAt: recordedAt,
         notes: notes,
+        attachmentPath: attachmentPath,
       );
 }
 
@@ -76,4 +78,12 @@ class DeleteHealthRecordUseCase {
   const DeleteHealthRecordUseCase(this._repository);
 
   Future<ApiResult<void>> call(String id) => _repository.deleteRecord(id);
+}
+
+class GetPatientRecordsForDoctorUseCase {
+  final HealthRecordRepository _repository;
+  const GetPatientRecordsForDoctorUseCase(this._repository);
+
+  Future<ApiResult<List<HealthRecordEntity>>> call(String patientId) =>
+      _repository.getPatientRecordsForDoctor(patientId);
 }

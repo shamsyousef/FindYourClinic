@@ -1,3 +1,4 @@
+import '../../../../core/utils/date_utils.dart';
 import '../../domain/entities/health_record_entity.dart';
 
 class VitalModel {
@@ -14,7 +15,7 @@ class VitalModel {
   factory VitalModel.fromJson(Map<String, dynamic> json) => VitalModel(
         value: json['value'] as String,
         unit: json['unit'] as String?,
-        recordedAt: DateTime.parse(json['recordedAt'] as String),
+        recordedAt: parseServerDateTime(json['recordedAt'] as String),
       );
 
   VitalEntity toEntity() => VitalEntity(

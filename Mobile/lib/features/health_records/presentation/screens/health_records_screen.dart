@@ -83,8 +83,7 @@ class HealthRecordsScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
+                                  .onSurfaceVariant,
                             ),
                       ),
                     ),

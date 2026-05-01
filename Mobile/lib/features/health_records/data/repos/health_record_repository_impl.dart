@@ -9,6 +9,15 @@ import '../../domain/repos/health_record_repository.dart';
 import '../models/health_record_model.dart';
 import '../models/health_summary_model.dart';
 
+const _attachmentSupportedTypes = {
+  HealthRecordType.labResult,
+  HealthRecordType.bloodTest,
+  HealthRecordType.radiology,
+  HealthRecordType.vaccination,
+  HealthRecordType.prescription,
+  HealthRecordType.other,
+};
+
 class HealthRecordRepositoryImpl implements HealthRecordRepository {
   final ApiClient _apiClient;
 
@@ -24,6 +33,23 @@ class HealthRecordRepositoryImpl implements HealthRecordRepository {
         ApiEndpoints.healthRecords,
         queryParameters: type != null ? {'type': type.index} : null,
       );
+      final data = response.data['data'] as List;
+      return Success(
+        data.map((e) => HealthRecordModel.fromJson(e).toEntity()).toList(),
+      );
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (e) {
+      return Error(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<ApiResult<List<HealthRecordEntity>>> getPatientRecordsForDoctor(
+      String patientId) async {
+    try {
+      final response = await _apiClient.dio
+          .get(ApiEndpoints.patientHealthRecords(patientId));
       final data = response.data['data'] as List;
       return Success(
         data.map((e) => HealthRecordModel.fromJson(e).toEntity()).toList(),
@@ -70,18 +96,37 @@ class HealthRecordRepositoryImpl implements HealthRecordRepository {
     String? unit,
     required DateTime recordedAt,
     String? notes,
+    String? attachmentPath,
   }) async {
     try {
-      final response = await _apiClient.dio.post(
-        ApiEndpoints.healthRecords,
-        data: {
+      final dynamic requestData;
+      final hasAttachment = attachmentPath != null &&
+          _attachmentSupportedTypes.contains(type);
+
+      if (hasAttachment) {
+        requestData = FormData.fromMap({
           'title': title,
           'type': type.index,
           'value': ?value,
           'unit': ?unit,
           'recordedAt': recordedAt.toUtc().toIso8601String(),
           'notes': ?notes,
-        },
+          'attachment': await MultipartFile.fromFile(attachmentPath),
+        });
+      } else {
+        requestData = {
+          'title': title,
+          'type': type.index,
+          'value': ?value,
+          'unit': ?unit,
+          'recordedAt': recordedAt.toUtc().toIso8601String(),
+          'notes': ?notes,
+        };
+      }
+
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.healthRecords,
+        data: requestData,
       );
       final data = response.data['data'] as Map<String, dynamic>;
       return Success(HealthRecordModel.fromJson(data).toEntity());

@@ -75,6 +75,7 @@ class HealthRecordCubit extends Cubit<HealthRecordState> {
     String? unit,
     required DateTime recordedAt,
     String? notes,
+    String? attachmentPath,
   }) async {
     emit(HealthRecordActionInProgress());
     final result = await _createUseCase(
@@ -84,6 +85,7 @@ class HealthRecordCubit extends Cubit<HealthRecordState> {
       unit: unit,
       recordedAt: recordedAt,
       notes: notes,
+      attachmentPath: attachmentPath,
     );
     switch (result) {
       case Success():

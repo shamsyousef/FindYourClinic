@@ -43,7 +43,7 @@ class VitalCard extends StatelessWidget {
                 Text(
                   DateFormat('MMM d').format(vital!.recordedAt.toLocal()),
                   style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
             ],
@@ -63,14 +63,14 @@ class VitalCard extends StatelessWidget {
               Text(
                 vital!.unit!,
                 style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
           ] else
             Text(
               'No data',
               style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           const SizedBox(height: 4),

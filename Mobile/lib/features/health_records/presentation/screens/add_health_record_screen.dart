@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,6 +24,8 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
 
   late HealthRecordType _selectedType;
   late DateTime _selectedDate;
+  String? _attachmentPath;
+  String? _attachmentName;
 
   bool get _isEditing => widget.existingRecord != null;
 
@@ -50,6 +53,17 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
     HealthRecordType.spO2: '%',
   };
 
+  static const _attachmentTypes = {
+    HealthRecordType.labResult,
+    HealthRecordType.bloodTest,
+    HealthRecordType.radiology,
+    HealthRecordType.vaccination,
+    HealthRecordType.prescription,
+    HealthRecordType.other,
+  };
+
+  bool get _supportsAttachment => _attachmentTypes.contains(_selectedType);
+
   @override
   void initState() {
     super.initState();
@@ -75,8 +89,14 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
     if (type == null) return;
     setState(() {
       _selectedType = type;
-      if (_unitController.text.isEmpty || _defaultUnits.containsValue(_unitController.text)) {
+      if (_unitController.text.isEmpty ||
+          _defaultUnits.containsValue(_unitController.text)) {
         _unitController.text = _defaultUnits[type] ?? '';
+      }
+      // Clear attachment if the new type doesn't support it
+      if (!_attachmentTypes.contains(type)) {
+        _attachmentPath = null;
+        _attachmentName = null;
       }
     });
   }
@@ -91,6 +111,28 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+      allowMultiple: false,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      setState(() {
+        _attachmentPath = file.path;
+        _attachmentName = file.name;
+      });
+    }
+  }
+
+  void _removeAttachment() {
+    setState(() {
+      _attachmentPath = null;
+      _attachmentName = null;
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final cubit = context.read<HealthRecordCubit>();
@@ -99,19 +141,32 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
         id: widget.existingRecord!.id,
         title: _titleController.text.trim(),
         type: _selectedType,
-        value: _valueController.text.trim().isEmpty ? null : _valueController.text.trim(),
-        unit: _unitController.text.trim().isEmpty ? null : _unitController.text.trim(),
+        value: _valueController.text.trim().isEmpty
+            ? null
+            : _valueController.text.trim(),
+        unit: _unitController.text.trim().isEmpty
+            ? null
+            : _unitController.text.trim(),
         recordedAt: _selectedDate,
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
     } else {
       await cubit.createRecord(
         title: _titleController.text.trim(),
         type: _selectedType,
-        value: _valueController.text.trim().isEmpty ? null : _valueController.text.trim(),
-        unit: _unitController.text.trim().isEmpty ? null : _unitController.text.trim(),
+        value: _valueController.text.trim().isEmpty
+            ? null
+            : _valueController.text.trim(),
+        unit: _unitController.text.trim().isEmpty
+            ? null
+            : _unitController.text.trim(),
         recordedAt: _selectedDate,
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        attachmentPath: _attachmentPath,
       );
     }
     if (mounted) Navigator.of(context).pop();
@@ -152,9 +207,8 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
                       (v == null || v.trim().isEmpty) ? 'Title is required' : null,
                 ),
                 const SizedBox(height: 16),
-                // ignore: deprecated_member_use
                 DropdownButtonFormField<HealthRecordType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: _typeLabels.entries
                       .map((e) => DropdownMenuItem(
@@ -172,7 +226,8 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
                       child: TextFormField(
                         controller: _valueController,
                         decoration: const InputDecoration(labelText: 'Value'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -209,6 +264,17 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
                   maxLines: 3,
                   textCapitalization: TextCapitalization.sentences,
                 ),
+
+                // ─── Attachment section (only for document-type records) ───
+                if (_supportsAttachment && !_isEditing) ...[
+                  const SizedBox(height: 20),
+                  _AttachmentSection(
+                    fileName: _attachmentName,
+                    onPick: _pickAttachment,
+                    onRemove: _removeAttachment,
+                  ),
+                ],
+
                 const SizedBox(height: 28),
                 BlocBuilder<HealthRecordCubit, HealthRecordState>(
                   builder: (context, state) {
@@ -234,5 +300,86 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
         ),
       ),
     );
+  }
+}
+
+class _AttachmentSection extends StatelessWidget {
+  final String? fileName;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  const _AttachmentSection({
+    required this.fileName,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attachment (PDF, PNG, JPG)',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: cs.onSurface.withAlpha(160),
+              ),
+        ),
+        const SizedBox(height: 8),
+        if (fileName != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withAlpha(80),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: cs.primary.withAlpha(80)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _fileIcon(fileName!),
+                  size: 20,
+                  color: cs.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    fileName!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurface,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, size: 18, color: cs.error),
+                  onPressed: onRemove,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            icon: const Icon(Icons.attach_file),
+            label: const Text('Attach File'),
+            onPressed: onPick,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  IconData _fileIcon(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    if (ext == 'pdf') return Icons.picture_as_pdf_outlined;
+    return Icons.image_outlined;
   }
 }

@@ -1,3 +1,4 @@
+import '../../../../core/utils/date_utils.dart';
 import '../../domain/entities/health_record_entity.dart';
 
 class HealthRecordModel {
@@ -28,7 +29,7 @@ class HealthRecordModel {
         type: json['type'] as String? ?? 'Other',
         value: json['value'] as String?,
         unit: json['unit'] as String?,
-        recordedAt: DateTime.parse(json['recordedAt'] as String),
+        recordedAt: parseServerDateTime(json['recordedAt'] as String),
         notes: json['notes'] as String?,
         fileUrl: json['fileUrl'] as String?,
       );
