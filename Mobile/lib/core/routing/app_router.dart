@@ -65,10 +65,12 @@ import '../../features/health_records/presentation/screens/health_record_detail_
 import '../../features/health_records/presentation/screens/add_health_record_screen.dart';
 
 // AI Health
+import '../../features/ai_health/domain/entities/symptom_analysis.dart';
 import '../../features/ai_health/presentation/cubits/ai_chat_cubit.dart';
 import '../../features/ai_health/presentation/cubits/symptom_checker_cubit.dart';
 import '../../features/ai_health/presentation/screens/ai_chat_screen.dart';
 import '../../features/ai_health/presentation/screens/symptom_checker_screen.dart';
+import '../../features/ai_health/presentation/screens/symptom_result_screen.dart';
 
 part 'route_names.dart';
 
@@ -335,6 +337,14 @@ class AppRouter {
           create: (_) => sl<SymptomCheckerCubit>(),
           child: const SymptomCheckerScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/patient/symptom-result',
+        name: RouteNames.symptomResult,
+        builder: (context, state) {
+          final analysis = state.extra as SymptomAnalysis;
+          return SymptomResultScreen(analysis: analysis);
+        },
       ),
 
       StatefulShellRoute.indexedStack(

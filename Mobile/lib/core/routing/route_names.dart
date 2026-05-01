@@ -61,5 +61,6 @@ class RouteNames {
   // AI Health
   static const aiChat = 'aiChat';
   static const symptomChecker = 'symptomChecker';
+  static const symptomResult = 'symptomResult';
 }
 
