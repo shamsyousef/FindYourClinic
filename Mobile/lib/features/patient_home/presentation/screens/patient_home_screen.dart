@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
@@ -199,6 +200,52 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                     ),
                   ),
 
+                  // ─── AI Health Tools ───
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('AI Health Tools',
+                              style: AppTextStyles.heading3),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _AiToolCard(
+                                  title: 'AI Assistant',
+                                  subtitle: 'Chat & get guidance',
+                                  icon: Icons.auto_awesome,
+                                  gradientColors: [
+                                    AppColors.gradientStart,
+                                    AppColors.gradientMiddle,
+                                  ],
+                                  onTap: () => context
+                                      .pushNamed(RouteNames.aiChat),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _AiToolCard(
+                                  title: 'Symptom Checker',
+                                  subtitle: 'Analyze symptoms',
+                                  icon: Icons.medical_services_outlined,
+                                  gradientColors: [
+                                    AppColors.gradientMiddle,
+                                    AppColors.gradientEnd,
+                                  ],
+                                  onTap: () => context
+                                      .pushNamed(RouteNames.symptomChecker),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   // ─── Top Doctors ───
                   SliverToBoxAdapter(
                     child: Padding(
@@ -297,6 +344,79 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               ),
             ),
         },
+      ),
+    );
+  }
+}
+
+class _AiToolCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<Color> gradientColors;
+  final VoidCallback onTap;
+
+  const _AiToolCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.gradientColors,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Icon(Icons.arrow_forward_ios,
+                    color: Colors.white60, size: 12),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
