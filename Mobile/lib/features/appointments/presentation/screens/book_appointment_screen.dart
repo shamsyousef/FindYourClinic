@@ -59,15 +59,6 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           if (state is BookingSlotsLoaded) {
             setState(() => _cachedSlots = state.slots);
           }
-          if (state is BookingSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Appointment booked successfully!'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-            context.pop(true); // Return success to previous screen
-          }
           if (state is BookingError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -144,13 +135,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                   child: ElevatedButton(
                     onPressed: isSubmitting
                         ? null
-                        : () {
-                            context.read<BookingCubit>().bookAppointment(
-                              doctorProfileId: widget.doctorProfileId,
-                              scheduledAt: _selectedSlot!,
-                              locationName: widget.clinicName,
-                            );
-                          },
+                        : () => _navigateToCheckout(context),
                     child: isSubmitting
                         ? const SizedBox(
                             height: 20,
@@ -160,7 +145,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Confirm Booking'),
+                        : const Text('Continue to Payment'),
                   ),
                 ),
             ],
@@ -168,6 +153,25 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         },
       ),
     );
+  }
+
+  void _navigateToCheckout(BuildContext context) {
+    // Parse fee from the consultationFee string like "150 EGP" or "150.00"
+    final feeStr = widget.consultationFee ?? '0';
+    final fee = double.tryParse(
+          feeStr.replaceAll(RegExp(r'[^0-9.]'), ''),
+        ) ??
+        0.0;
+
+    context.push('/checkout', extra: {
+      'doctorProfileId': widget.doctorProfileId,
+      'doctorName': widget.doctorName,
+      'doctorImageUrl': widget.doctorImageUrl,
+      'specialty': widget.specialty,
+      'consultationFee': fee,
+      'scheduledAt': _selectedSlot!,
+      'locationName': widget.clinicName,
+    });
   }
 
   Widget _buildDoctorCard(ThemeData theme, bool isDark) {

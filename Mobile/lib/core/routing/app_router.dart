@@ -72,6 +72,19 @@ import '../../features/ai_health/presentation/screens/ai_chat_screen.dart';
 import '../../features/ai_health/presentation/screens/symptom_checker_screen.dart';
 import '../../features/ai_health/presentation/screens/symptom_result_screen.dart';
 
+// Payment
+import '../../features/payment/domain/entities/payment_entities.dart' as pay_entities;
+import '../../features/payment/presentation/screens/checkout_screen.dart';
+import '../../features/payment/presentation/screens/doctor_earnings_screen.dart';
+import '../../features/payment/presentation/screens/doctor_payment_info_screen.dart';
+import '../../features/payment/presentation/screens/doctor_transaction_history_screen.dart';
+import '../../features/payment/presentation/screens/patient_payment_methods_screen.dart';
+import '../../features/payment/presentation/screens/patient_transaction_history_screen.dart';
+import '../../features/payment/presentation/screens/receipt_detail_screen.dart';
+
+// Booking Success
+import '../../features/appointments/presentation/screens/booking_success_screen.dart';
+
 part 'route_names.dart';
 
 /// Main app router with auth redirect and role-based shell navigation.
@@ -180,9 +193,13 @@ class AppRouter {
         name: RouteNames.search,
         builder: (context, state) {
           final specialtyId = state.uri.queryParameters['specialtyId'];
+          final specialtyName = state.uri.queryParameters['specialtyName'];
           return BlocProvider(
             create: (_) => sl<SearchCubit>(),
-            child: SearchScreen(initialSpecialtyId: specialtyId),
+            child: SearchScreen(
+              initialSpecialtyId: specialtyId,
+              initialSpecialtyName: specialtyName,
+            ),
           );
         },
       ),
@@ -327,6 +344,84 @@ class AppRouter {
               doctorImageUrl: extra['doctorImageUrl'] as String?,
             ),
           );
+        },
+      ),
+
+      // ─── Checkout (Payment) ───
+      GoRoute(
+        path: '/checkout',
+        name: RouteNames.checkout,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return CheckoutScreen(
+            doctorProfileId: extra['doctorProfileId'] as String,
+            doctorName: extra['doctorName'] as String,
+            doctorImageUrl: extra['doctorImageUrl'] as String?,
+            specialty: extra['specialty'] as String?,
+            consultationFee: extra['consultationFee'] as double,
+            scheduledAt: extra['scheduledAt'] as DateTime,
+            locationName: extra['locationName'] as String?,
+          );
+        },
+      ),
+
+      // ─── Payments — Patient ───
+      GoRoute(
+        path: '/patient/payments/methods',
+        name: RouteNames.patientPaymentMethods,
+        builder: (context, state) => const PatientPaymentMethodsScreen(),
+      ),
+      GoRoute(
+        path: '/patient/payments/history',
+        name: RouteNames.patientTransactionHistory,
+        builder: (context, state) => const PatientTransactionHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/patient/payments/receipt',
+        name: RouteNames.patientReceipt,
+        builder: (context, state) {
+          final tx = state.extra as pay_entities.TransactionEntity;
+          return ReceiptDetailScreen(transaction: tx, isPatient: true);
+        },
+      ),
+
+      // ─── Booking Success ───
+      GoRoute(
+        path: '/booking-success',
+        name: RouteNames.bookingSuccess,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return BookingSuccessScreen(
+            isConfirmed: extra['isConfirmed'] as bool,
+            doctorName: extra['doctorName'] as String,
+            scheduledAt: extra['scheduledAt'] as DateTime,
+            appointmentId: extra['appointmentId'] as String?,
+          );
+        },
+      ),
+
+      // ─── Payments — Doctor ───
+      GoRoute(
+        path: '/doctor/earnings',
+        name: RouteNames.doctorEarnings,
+        builder: (context, state) => const DoctorEarningsScreen(),
+      ),
+      GoRoute(
+        path: '/doctor/payment-info',
+        name: RouteNames.doctorPaymentInfo,
+        builder: (context, state) => const DoctorPaymentInfoScreen(),
+      ),
+      GoRoute(
+        path: '/doctor/payments/history',
+        name: RouteNames.doctorTransactionHistory,
+        builder: (context, state) => const DoctorTransactionHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/doctor/payments/receipt',
+        name: RouteNames.doctorReceipt,
+        builder: (context, state) {
+          final tx = state.extra as pay_entities.TransactionEntity;
+          return ReceiptDetailScreen(transaction: tx, isPatient: false);
         },
       ),
 

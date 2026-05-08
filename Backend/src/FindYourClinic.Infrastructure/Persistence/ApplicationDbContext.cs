@@ -32,6 +32,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<DoctorReview> DoctorReviews => Set<DoctorReview>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<DoctorWallet> DoctorWallets => Set<DoctorWallet>();
+    public DbSet<PendingBookingIntent> PendingBookingIntents => Set<PendingBookingIntent>();
+    public DbSet<DoctorPaymentInfo> DoctorPaymentInfos => Set<DoctorPaymentInfo>();
 
     // EF Core reads DateTime from SQL Server as DateTimeKind.Unspecified.
     // This convention marks every DateTime property as UTC on read so that
@@ -123,6 +127,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<Appointment>(entity =>
         {
             entity.Property(x => x.LocationName).HasMaxLength(500);
+            entity.Property(x => x.AmountPaid).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PaymobOrderId).HasMaxLength(200);
+            entity.Property(x => x.PaymobTransactionId).HasMaxLength(200);
             entity.HasOne(x => x.Patient)
                 .WithMany(x => x.PatientAppointments)
                 .HasForeignKey(x => x.PatientId)
@@ -219,6 +226,66 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             entity.Property(x => x.Role).HasMaxLength(20).IsRequired();
             entity.Property(x => x.Content).HasMaxLength(8000).IsRequired();
             entity.HasIndex(x => new { x.UserId, x.CreatedAt });
+        });
+
+        builder.Entity<Transaction>(entity =>
+        {
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PlatformFee).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.DoctorEarnings).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PaymobOrderId).HasMaxLength(200);
+            entity.Property(x => x.PaymobTransactionId).HasMaxLength(200);
+            entity.HasOne(x => x.Appointment)
+                .WithOne(x => x.Transaction)
+                .HasForeignKey<Transaction>(x => x.AppointmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Patient)
+                .WithMany()
+                .HasForeignKey(x => x.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.DoctorProfile)
+                .WithMany(x => x.Transactions)
+                .HasForeignKey(x => x.DoctorProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => x.PaymobOrderId);
+            entity.HasIndex(x => new { x.PatientId, x.CreatedAt });
+            entity.HasIndex(x => new { x.DoctorProfileId, x.CreatedAt });
+        });
+
+        builder.Entity<DoctorWallet>(entity =>
+        {
+            entity.Property(x => x.TotalEarnings).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PendingBalance).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.WithdrawnAmount).HasColumnType("decimal(18,2)");
+            entity.HasOne(x => x.DoctorProfile)
+                .WithOne(x => x.Wallet)
+                .HasForeignKey<DoctorWallet>(x => x.DoctorProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PendingBookingIntent>(entity =>
+        {
+            entity.Property(x => x.PaymobOrderId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.MerchantOrderId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.LocationName).HasMaxLength(500);
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PlatformFee).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.DoctorEarnings).HasColumnType("decimal(18,2)");
+            entity.HasIndex(x => x.PaymobOrderId).IsUnique();
+            entity.HasIndex(x => new { x.PatientId, x.IsConsumed });
+        });
+
+        builder.Entity<DoctorPaymentInfo>(entity =>
+        {
+            entity.Property(x => x.WalletPhoneNumber).HasMaxLength(20);
+            entity.Property(x => x.BankName).HasMaxLength(200);
+            entity.Property(x => x.AccountHolderName).HasMaxLength(200);
+            entity.Property(x => x.AccountNumber).HasMaxLength(100);
+            entity.Property(x => x.IBAN).HasMaxLength(50);
+            entity.HasOne(x => x.DoctorProfile)
+                .WithOne(x => x.PaymentInfo)
+                .HasForeignKey<DoctorPaymentInfo>(x => x.DoctorProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

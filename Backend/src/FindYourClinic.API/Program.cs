@@ -1,5 +1,6 @@
 using FindYourClinic.API.Behaviors;
 using FindYourClinic.API.Features.Doctors.Shared;
+using FindYourClinic.API.Features.Payments.PaymobWebhook;
 using FindYourClinic.API.Hubs;
 using FindYourClinic.API.Middleware;
 using FindYourClinic.API.Services;
@@ -20,6 +21,8 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IGeminiService, GeminiService>();
+builder.Services.AddScoped<IPaymobService, PaymobService>();
+builder.Services.AddScoped<PaymobWebhookHandler>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 

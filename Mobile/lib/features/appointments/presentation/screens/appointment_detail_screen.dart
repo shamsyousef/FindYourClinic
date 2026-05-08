@@ -35,9 +35,10 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    context
-        .read<AppointmentCubit>()
-        .loadAppointmentDetail(widget.appointmentId);
+    context.read<AppointmentCubit>().loadAppointmentDetail(
+          widget.appointmentId,
+          isDoctorView: widget.isDoctorView,
+        );
   }
 
   @override
@@ -322,7 +323,12 @@ class _ActionBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (apt.effectiveStatus == AppointmentStatus.scheduled) {
+    // Awaiting doctor approval — applies to both online (scheduled) and
+    // cash (pendingPayment) bookings the doctor hasn't actioned yet.
+    if (apt.effectiveStatus == AppointmentStatus.scheduled ||
+        apt.effectiveStatus == AppointmentStatus.pendingPayment) {
+      final isCashPending =
+          apt.effectiveStatus == AppointmentStatus.pendingPayment;
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -338,11 +344,23 @@ class _ActionBanner extends StatelessWidget {
                 const Icon(Icons.pending_actions,
                     color: AppColors.warning, size: 20),
                 const SizedBox(width: 8),
-                Text('Action Required',
-                    style: AppTextStyles.label
-                        .copyWith(color: AppColors.warning)),
+                Text(
+                  isCashPending
+                      ? 'New Cash Booking — Action Required'
+                      : 'Action Required',
+                  style: AppTextStyles.label
+                      .copyWith(color: AppColors.warning),
+                ),
               ],
             ),
+            if (isCashPending) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Patient will pay at the clinic. Approve to confirm the slot.',
+                style: AppTextStyles.bodySm
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -353,7 +371,7 @@ class _ActionBanner extends StatelessWidget {
                     onPressed: () => context
                         .read<AppointmentCubit>()
                         .confirmAppointment(apt.id),
-                    child: const Text('Accept'),
+                    child: Text(isCashPending ? 'Approve' : 'Accept'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -366,7 +384,7 @@ class _ActionBanner extends StatelessWidget {
                     onPressed: () => context
                         .read<AppointmentCubit>()
                         .cancelAppointment(apt.id),
-                    child: const Text('Decline'),
+                    child: Text(isCashPending ? 'Reject' : 'Decline'),
                   ),
                 ),
               ],
@@ -376,45 +394,137 @@ class _ActionBanner extends StatelessWidget {
       );
     }
 
-    if (apt.effectiveStatus == AppointmentStatus.confirmed) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.success.withAlpha(20),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.success.withAlpha(80)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.check_circle_outline,
-                    color: AppColors.success, size: 20),
-                const SizedBox(width: 8),
-                Text('Appointment Confirmed',
-                    style: AppTextStyles.label
-                        .copyWith(color: AppColors.success)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary),
-                onPressed: () => context
-                    .read<AppointmentCubit>()
-                    .completeAppointment(apt.id),
-                child: const Text('Mark as Completed'),
-              ),
-            ),
-          ],
-        ),
+    if (apt.effectiveStatus == AppointmentStatus.confirmed ||
+        apt.effectiveStatus == AppointmentStatus.completed) {
+      return Column(
+        children: [
+          if (apt.needsCashPayment) _MarkAsPaidBanner(apt: apt),
+          if (apt.effectiveStatus == AppointmentStatus.confirmed)
+            _ConfirmedBanner(apt: apt),
+        ],
       );
     }
 
     return const SizedBox.shrink();
+  }
+}
+
+class _ConfirmedBanner extends StatelessWidget {
+  final AppointmentEntity apt;
+  const _ConfirmedBanner({required this.apt});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.success.withAlpha(20),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.success.withAlpha(80)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle_outline,
+                  color: AppColors.success, size: 20),
+              const SizedBox(width: 8),
+              Text('Appointment Confirmed',
+                  style: AppTextStyles.label
+                      .copyWith(color: AppColors.success)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary),
+              onPressed: () => context
+                  .read<AppointmentCubit>()
+                  .completeAppointment(apt.id),
+              child: const Text('Mark as Completed'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarkAsPaidBanner extends StatelessWidget {
+  final AppointmentEntity apt;
+  const _MarkAsPaidBanner({required this.apt});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.info.withAlpha(20),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.info.withAlpha(80)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.payments_outlined,
+                  color: AppColors.info, size: 20),
+              const SizedBox(width: 8),
+              Text('Cash Payment Pending',
+                  style: AppTextStyles.label
+                      .copyWith(color: AppColors.info)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Confirm once the patient has paid in person.',
+            style: AppTextStyles.bodySm
+                .copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Mark as Paid'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.info),
+              onPressed: () => _confirmMarkAsPaid(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmMarkAsPaid(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mark as Paid?'),
+        content: const Text(
+          'Confirm that the patient has paid in person. This will record the transaction in your earnings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted) return;
+    if (confirm ?? false) {
+      context.read<AppointmentCubit>().markCashAppointmentAsPaid(apt.id);
+    }
   }
 }
 
@@ -499,6 +609,7 @@ class _StatusBadge extends StatelessWidget {
         AppointmentStatus.confirmed => AppColors.success,
         AppointmentStatus.cancelled => AppColors.error,
         AppointmentStatus.completed => AppColors.textSecondary,
+        AppointmentStatus.pendingPayment => AppColors.info,
       };
 
   String get _label => isDoctor ? status.doctorLabel : status.patientLabel;

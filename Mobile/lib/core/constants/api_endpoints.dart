@@ -31,6 +31,7 @@ class ApiEndpoints {
   static const updateDoctorProfile = '/api/doctors/profile';
   static const doctorMyStatus = '/api/doctors/me/status';
   static const doctorMyDocuments = '/api/doctors/me/documents';
+  static const doctorPaymentInfo = '/api/doctors/me/payment-info';
 
   // ─── Doctor Availability ───
   static String doctorSlots(String doctorId) =>
@@ -87,6 +88,14 @@ class ApiEndpoints {
   static const aiChat = '/api/ai/chat';
   static const aiChatHistory = '/api/ai/chat/history';
   static const aiSymptomsAnalyze = '/api/ai/symptoms/analyze';
+
+  // ─── Payments ───
+  static const paymentInitiate = '/api/payments/initiate';
+  static const paymentConfirm = '/api/payments/confirm';
+  static const paymentHistory = '/api/payments/history';
+  static const paymentEarnings = '/api/payments/earnings';
+  static String markAsPaid(String appointmentId) =>
+      '/api/payments/$appointmentId/mark-paid';
 
   // ─── SignalR ───
   static const chatHub = '/hubs/chat';

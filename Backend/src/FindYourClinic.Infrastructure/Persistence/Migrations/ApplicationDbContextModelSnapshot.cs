@@ -195,6 +195,9 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("AmountPaid")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -210,6 +213,20 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymobOrderId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PaymobTransactionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("ReminderSent")
                         .HasColumnType("bit");
@@ -404,6 +421,61 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.ToTable("DoctorDocuments");
                 });
 
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.DoctorPaymentInfo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccountHolderName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IBAN")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("PayoutMethod")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("WalletPhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("WalletProvider")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorProfileId")
+                        .IsUnique();
+
+                    b.ToTable("DoctorPaymentInfos");
+                });
+
             modelBuilder.Entity("FindYourClinic.Domain.Entities.DoctorProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -514,6 +586,44 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("DoctorReviews");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.DoctorWallet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("PendingBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalEarnings")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("WithdrawnAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorProfileId")
+                        .IsUnique();
+
+                    b.ToTable("DoctorWallets");
                 });
 
             modelBuilder.Entity("FindYourClinic.Domain.Entities.HealthRecord", b =>
@@ -659,6 +769,78 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.ToTable("PasswordResetTokens");
                 });
 
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.PendingBookingIntent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DoctorEarnings")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("DoctorProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsConsumed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LocationName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MerchantOrderId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymobOrderId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("PlatformFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("ScheduledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymobOrderId")
+                        .IsUnique();
+
+                    b.HasIndex("PatientId", "IsConsumed");
+
+                    b.ToTable("PendingBookingIntents");
+                });
+
             modelBuilder.Entity("FindYourClinic.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -737,6 +919,73 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Specialties");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.Transaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DoctorEarnings")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("DoctorProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymobOrderId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PaymobTransactionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("PlatformFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique();
+
+                    b.HasIndex("PaymobOrderId");
+
+                    b.HasIndex("DoctorProfileId", "CreatedAt");
+
+                    b.HasIndex("PatientId", "CreatedAt");
+
+                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -949,6 +1198,17 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.Navigation("DoctorProfile");
                 });
 
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.DoctorPaymentInfo", b =>
+                {
+                    b.HasOne("FindYourClinic.Domain.Entities.DoctorProfile", "DoctorProfile")
+                        .WithOne("PaymentInfo")
+                        .HasForeignKey("FindYourClinic.Domain.Entities.DoctorPaymentInfo", "DoctorProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DoctorProfile");
+                });
+
             modelBuilder.Entity("FindYourClinic.Domain.Entities.DoctorProfile", b =>
                 {
                     b.HasOne("FindYourClinic.Domain.Entities.Specialty", "Specialty")
@@ -985,6 +1245,17 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.Navigation("DoctorProfile");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.DoctorWallet", b =>
+                {
+                    b.HasOne("FindYourClinic.Domain.Entities.DoctorProfile", "DoctorProfile")
+                        .WithOne("Wallet")
+                        .HasForeignKey("FindYourClinic.Domain.Entities.DoctorWallet", "DoctorProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DoctorProfile");
                 });
 
             modelBuilder.Entity("FindYourClinic.Domain.Entities.HealthRecord", b =>
@@ -1029,6 +1300,33 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.Transaction", b =>
+                {
+                    b.HasOne("FindYourClinic.Domain.Entities.Appointment", "Appointment")
+                        .WithOne("Transaction")
+                        .HasForeignKey("FindYourClinic.Domain.Entities.Transaction", "AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FindYourClinic.Domain.Entities.DoctorProfile", "DoctorProfile")
+                        .WithMany("Transactions")
+                        .HasForeignKey("DoctorProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FindYourClinic.Domain.Entities.ApplicationUser", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("DoctorProfile");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -1103,6 +1401,11 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.Navigation("SentMessages");
                 });
 
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.Appointment", b =>
+                {
+                    b.Navigation("Transaction");
+                });
+
             modelBuilder.Entity("FindYourClinic.Domain.Entities.Conversation", b =>
                 {
                     b.Navigation("Messages");
@@ -1116,7 +1419,13 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Documents");
 
+                    b.Navigation("PaymentInfo");
+
                     b.Navigation("Reviews");
+
+                    b.Navigation("Transactions");
+
+                    b.Navigation("Wallet");
                 });
 
             modelBuilder.Entity("FindYourClinic.Domain.Entities.Specialty", b =>

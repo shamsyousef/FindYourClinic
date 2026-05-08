@@ -105,6 +105,17 @@ import '../../features/ai_health/domain/usecases/analyze_symptoms_usecase.dart';
 import '../../features/ai_health/presentation/cubits/ai_chat_cubit.dart';
 import '../../features/ai_health/presentation/cubits/symptom_checker_cubit.dart';
 
+// Payment
+import '../../features/payment/data/preferred_payment_method_store.dart';
+import '../../features/payment/data/repos/payment_repository_impl.dart';
+import '../../features/payment/domain/repos/payment_repository.dart';
+import '../../features/payment/domain/usecases/payment_usecases.dart';
+import '../../features/payment/presentation/cubits/checkout_cubit.dart';
+import '../../features/payment/presentation/cubits/doctor_earnings_cubit.dart';
+import '../../features/payment/presentation/cubits/doctor_payment_info_cubit.dart';
+import '../../features/payment/presentation/cubits/payment_history_cubit.dart';
+import '../../features/payment/presentation/cubits/paymob_webview_cubit.dart';
+
 final sl = GetIt.instance;
 
 /// Initialize all dependencies. Called once at app startup.
@@ -160,6 +171,9 @@ Future<void> initServiceLocator() async {
 
   // ─── AI Health Feature ───
   _initAiHealth();
+
+  // ─── Payment Feature ───
+  _initPayment();
 }
 
 void _initAuth() {
@@ -372,6 +386,7 @@ void _initAppointments() {
       cancelAppointmentUseCase: sl<CancelAppointmentUseCase>(),
       confirmAppointmentUseCase: sl<ConfirmAppointmentUseCase>(),
       completeAppointmentUseCase: sl<CompleteAppointmentUseCase>(),
+      markAsPaidUseCase: sl<MarkAsPaidUseCase>(),
     ),
   );
   sl.registerFactory(
@@ -519,4 +534,47 @@ void _initAiHealth() {
     () => AiChatCubit(sl<ai_send.SendMessageUseCase>(), sl<GetChatHistoryUseCase>()),
   );
   sl.registerFactory(() => SymptomCheckerCubit(sl<AnalyzeSymptomsUseCase>()));
+}
+
+void _initPayment() {
+  sl.registerLazySingleton<PreferredPaymentMethodStore>(
+    () => PreferredPaymentMethodStore(),
+  );
+  sl.registerLazySingleton<PaymentRepository>(
+    () => PaymentRepositoryImpl(apiClient: sl<ApiClient>()),
+  );
+  sl.registerFactory(() => InitiatePaymentUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(() => ConfirmPaymentUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(() => GetPaymentHistoryUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(() => GetDoctorEarningsUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(() => MarkAsPaidUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(() => GetDoctorPaymentInfoUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(() => SaveDoctorPaymentInfoUseCase(sl<PaymentRepository>()));
+  sl.registerFactory(
+    () => DoctorPaymentInfoCubit(
+      getInfo: sl<GetDoctorPaymentInfoUseCase>(),
+      saveInfo: sl<SaveDoctorPaymentInfoUseCase>(),
+    ),
+  );
+  sl.registerFactory(
+    () => CheckoutCubit(
+      initiatePayment: sl<InitiatePaymentUseCase>(),
+      confirmPayment: sl<ConfirmPaymentUseCase>(),
+    ),
+  );
+  sl.registerFactory(
+    () => PaymobWebViewCubit(
+      confirmPayment: sl<ConfirmPaymentUseCase>(),
+    ),
+  );
+  sl.registerFactory(
+    () => PaymentHistoryCubit(
+      getPaymentHistory: sl<GetPaymentHistoryUseCase>(),
+    ),
+  );
+  sl.registerFactory(
+    () => DoctorEarningsCubit(
+      getDoctorEarnings: sl<GetDoctorEarningsUseCase>(),
+    ),
+  );
 }

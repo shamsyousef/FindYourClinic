@@ -13,6 +13,9 @@ class AppointmentModel {
   final String relatedPersonName;
   final String? relatedPersonImageUrl;
   final String? specialty;
+  final String paymentStatus;
+  final String? paymentMethod;
+  final double? amountPaid;
 
   const AppointmentModel({
     required this.id,
@@ -26,6 +29,9 @@ class AppointmentModel {
     required this.relatedPersonName,
     this.relatedPersonImageUrl,
     this.specialty,
+    this.paymentStatus = 'Unpaid',
+    this.paymentMethod,
+    this.amountPaid,
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +47,9 @@ class AppointmentModel {
       relatedPersonName: json['relatedPersonName'] ?? '',
       relatedPersonImageUrl: json['relatedPersonImageUrl'],
       specialty: json['specialty'],
+      paymentStatus: json['paymentStatus'] ?? 'Unpaid',
+      paymentMethod: json['paymentMethod'],
+      amountPaid: (json['amountPaid'] as num?)?.toDouble(),
     );
   }
 
@@ -56,6 +65,9 @@ class AppointmentModel {
         relatedPersonName: relatedPersonName,
         relatedPersonImageUrl: relatedPersonImageUrl,
         specialty: specialty,
+        paymentStatus: _parsePaymentStatus(paymentStatus),
+        paymentMethod: _parsePaymentMethod(paymentMethod),
+        amountPaid: amountPaid,
       );
 
   static AppointmentStatus _parseStatus(String status) {
@@ -66,8 +78,39 @@ class AppointmentModel {
         return AppointmentStatus.cancelled;
       case 'completed':
         return AppointmentStatus.completed;
+      case 'pendingpayment':
+        return AppointmentStatus.pendingPayment;
       default:
         return AppointmentStatus.scheduled;
+    }
+  }
+
+  static AppointmentPaymentStatus _parsePaymentStatus(String raw) {
+    switch (raw.toLowerCase()) {
+      case 'paid':
+        return AppointmentPaymentStatus.paid;
+      case 'pending':
+        return AppointmentPaymentStatus.pending;
+      case 'refunded':
+        return AppointmentPaymentStatus.refunded;
+      case 'failed':
+        return AppointmentPaymentStatus.failed;
+      default:
+        return AppointmentPaymentStatus.unpaid;
+    }
+  }
+
+  static AppointmentPaymentMethod? _parsePaymentMethod(String? raw) {
+    if (raw == null) return null;
+    switch (raw.toLowerCase()) {
+      case 'cash':
+        return AppointmentPaymentMethod.cash;
+      case 'card':
+        return AppointmentPaymentMethod.card;
+      case 'wallet':
+        return AppointmentPaymentMethod.wallet;
+      default:
+        return null;
     }
   }
 }

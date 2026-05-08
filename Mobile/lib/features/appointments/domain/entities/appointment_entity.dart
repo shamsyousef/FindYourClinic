@@ -3,7 +3,7 @@
 
 import '../../../../core/utils/date_utils.dart';
 
-enum AppointmentStatus { scheduled, confirmed, cancelled, completed }
+enum AppointmentStatus { scheduled, confirmed, cancelled, completed, pendingPayment }
 
 extension AppointmentStatusLabels on AppointmentStatus {
   String get patientLabel => switch (this) {
@@ -11,6 +11,7 @@ extension AppointmentStatusLabels on AppointmentStatus {
         AppointmentStatus.confirmed => 'Confirmed',
         AppointmentStatus.cancelled => 'Cancelled',
         AppointmentStatus.completed => 'Completed',
+        AppointmentStatus.pendingPayment => 'Awaiting Approval',
       };
 
   String get doctorLabel => switch (this) {
@@ -18,8 +19,13 @@ extension AppointmentStatusLabels on AppointmentStatus {
         AppointmentStatus.confirmed => 'Confirmed',
         AppointmentStatus.cancelled => 'Cancelled',
         AppointmentStatus.completed => 'Completed',
+        AppointmentStatus.pendingPayment => 'Cash - Pending Approval',
       };
 }
+
+enum AppointmentPaymentStatus { unpaid, pending, paid, refunded, failed }
+
+enum AppointmentPaymentMethod { cash, card, wallet }
 
 class AppointmentEntity {
   final String id;
@@ -33,6 +39,9 @@ class AppointmentEntity {
   final String relatedPersonName;
   final String? relatedPersonImageUrl;
   final String? specialty;
+  final AppointmentPaymentStatus paymentStatus;
+  final AppointmentPaymentMethod? paymentMethod;
+  final double? amountPaid;
 
   const AppointmentEntity({
     required this.id,
@@ -46,7 +55,19 @@ class AppointmentEntity {
     required this.relatedPersonName,
     this.relatedPersonImageUrl,
     this.specialty,
+    this.paymentStatus = AppointmentPaymentStatus.unpaid,
+    this.paymentMethod,
+    this.amountPaid,
   });
+
+  /// True for cash bookings the doctor approved but hasn't been paid for yet —
+  /// the doctor should see a "Mark as Paid" action.
+  bool get needsCashPayment =>
+      paymentMethod == AppointmentPaymentMethod.cash &&
+      paymentStatus != AppointmentPaymentStatus.paid &&
+      (status == AppointmentStatus.scheduled ||
+          status == AppointmentStatus.confirmed ||
+          status == AppointmentStatus.completed);
 
   static const _appointmentDuration = Duration(minutes: 30);
 

@@ -46,6 +46,7 @@ class RouteNames {
 
   // Appointments
   static const bookAppointment = 'bookAppointment';
+  static const checkout = 'checkout';
   static const appointmentDetail = 'appointmentDetail';
 
   // Health Records
@@ -63,5 +64,15 @@ class RouteNames {
   static const aiChat = 'aiChat';
   static const symptomChecker = 'symptomChecker';
   static const symptomResult = 'symptomResult';
+
+  // Payments
+  static const patientPaymentMethods = 'patientPaymentMethods';
+  static const patientTransactionHistory = 'patientTransactionHistory';
+  static const patientReceipt = 'patientReceipt';
+  static const doctorEarnings = 'doctorEarnings';
+  static const doctorTransactionHistory = 'doctorTransactionHistory';
+  static const doctorReceipt = 'doctorReceipt';
+  static const bookingSuccess = 'bookingSuccess';
+  static const doctorPaymentInfo = 'doctorPaymentInfo';
 }
 

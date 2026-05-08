@@ -191,6 +191,7 @@ class AppointmentCard extends StatelessWidget {
       AppointmentStatus.confirmed => AppColors.success,
       AppointmentStatus.cancelled => AppColors.error,
       AppointmentStatus.completed => AppColors.textSecondary,
+      AppointmentStatus.pendingPayment => AppColors.info,
     };
 
     return Container(
