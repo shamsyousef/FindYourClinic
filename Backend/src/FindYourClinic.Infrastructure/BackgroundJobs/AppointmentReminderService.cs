@@ -31,12 +31,23 @@ public class AppointmentReminderService : BackgroundService
             {
                 await SendRemindersAsync(stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed while processing appointment reminders.");
             }
 
-            await Task.Delay(Interval, stoppingToken);
+            try
+            {
+                await Task.Delay(Interval, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
     }
 

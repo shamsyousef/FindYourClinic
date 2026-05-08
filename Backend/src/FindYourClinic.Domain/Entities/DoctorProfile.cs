@@ -26,4 +26,7 @@ public class DoctorProfile : AuditableEntity
     public ICollection<DoctorAvailability> Availabilities { get; set; } = new List<DoctorAvailability>();
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     public ICollection<DoctorReview> Reviews { get; set; } = new List<DoctorReview>();
+    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+    public DoctorWallet? Wallet { get; set; }
+    public DoctorPaymentInfo? PaymentInfo { get; set; }
 }

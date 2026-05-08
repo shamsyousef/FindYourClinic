@@ -32,6 +32,11 @@ public class SearchDoctorsQueryHandler : IRequestHandler<SearchDoctorsQuery, Api
 
         if (query.SpecialtyId.HasValue)
             doctorQuery = doctorQuery.Where(x => x.SpecialtyId == query.SpecialtyId.Value);
+        else if (!string.IsNullOrWhiteSpace(query.SpecialtyName))
+        {
+            var nameLower = query.SpecialtyName.Trim().ToLower();
+            doctorQuery = doctorQuery.Where(x => x.Specialty.Name.ToLower() == nameLower);
+        }
 
         if (query.MinFee.HasValue)
             doctorQuery = doctorQuery.Where(x => x.ConsultationFee >= query.MinFee.Value);

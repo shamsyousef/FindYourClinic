@@ -5,7 +5,9 @@ using FindYourClinic.API.Features.Doctors.GetDoctorDashboard;
 using FindYourClinic.API.Features.Doctors.GetDoctorWeeklySchedule;
 using FindYourClinic.API.Features.Doctors.GetMyDocuments;
 using FindYourClinic.API.Features.Doctors.GetMyStatus;
+using FindYourClinic.API.Features.Doctors.GetPaymentInfo;
 using FindYourClinic.API.Features.Doctors.GetTopRatedDoctors;
+using FindYourClinic.API.Features.Doctors.SavePaymentInfo;
 using FindYourClinic.API.Features.Doctors.SearchDoctors;
 using FindYourClinic.API.Features.Doctors.UpdateOwnDoctorProfile;
 using FindYourClinic.Domain.Enums;
@@ -105,6 +107,26 @@ public class DoctorsController : ControllerBase
     {
         var userId = UserContext.GetRequiredUserId(User);
         var result = await _mediator.Send(new GetMyDocumentsQuery { UserId = userId }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("me/payment-info")]
+    [Authorize]
+    public async Task<IActionResult> GetPaymentInfo(CancellationToken cancellationToken)
+    {
+        var userId = UserContext.GetRequiredUserId(User);
+        var role = UserContext.GetRequiredRole(User);
+        var result = await _mediator.Send(new GetPaymentInfoQuery { UserId = userId, Role = role }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("me/payment-info")]
+    [Authorize]
+    public async Task<IActionResult> SavePaymentInfo([FromBody] SavePaymentInfoCommand command, CancellationToken cancellationToken)
+    {
+        command.UserId = UserContext.GetRequiredUserId(User);
+        command.Role = UserContext.GetRequiredRole(User);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 }

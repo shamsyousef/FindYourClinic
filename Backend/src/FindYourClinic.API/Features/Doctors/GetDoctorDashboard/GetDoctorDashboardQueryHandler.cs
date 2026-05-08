@@ -33,7 +33,6 @@ public class GetDoctorDashboardQueryHandler
         var now = DateTime.UtcNow;
         var todayStart = now.Date;
         var todayEnd = todayStart.AddDays(1);
-        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // ─── Quick Stats ───
         var todayAppointments = await _dbContext.Appointments
@@ -49,6 +48,23 @@ public class GetDoctorDashboardQueryHandler
             Pending: todayAppointments.Count(x => x.Status == AppointmentStatus.Scheduled
                                                   || x.Status == AppointmentStatus.Confirmed),
             Cancelled: todayAppointments.Count(x => x.Status == AppointmentStatus.Cancelled));
+
+        // ─── Overall Stats (all-time) ───
+        var statusBuckets = await _dbContext.Appointments
+            .AsNoTracking()
+            .Where(x => x.DoctorProfileId == doctorProfile.Id)
+            .GroupBy(x => x.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        int CountFor(params AppointmentStatus[] statuses) =>
+            statusBuckets.Where(b => statuses.Contains(b.Status)).Sum(b => b.Count);
+
+        var overallStats = new DoctorOverallStatsDto(
+            Total: statusBuckets.Sum(b => b.Count),
+            Completed: CountFor(AppointmentStatus.Completed),
+            Pending: CountFor(AppointmentStatus.Scheduled, AppointmentStatus.Confirmed),
+            Cancelled: CountFor(AppointmentStatus.Cancelled));
 
         // ─── Next Appointment ───
         var nextAppointment = await _dbContext.Appointments
@@ -69,11 +85,10 @@ public class GetDoctorDashboardQueryHandler
             .FirstOrDefaultAsync(cancellationToken);
 
         // ─── Performance Summary ───
-        var monthlyPatientCount = await _dbContext.Appointments
+        var totalPatientsCount = await _dbContext.Appointments
             .AsNoTracking()
             .Where(x => x.DoctorProfileId == doctorProfile.Id
-                        && x.ScheduledAt >= monthStart
-                        && x.Status != AppointmentStatus.Cancelled)
+                        && x.Status == AppointmentStatus.Completed)
             .Select(x => x.PatientId)
             .Distinct()
             .CountAsync(cancellationToken);
@@ -89,7 +104,7 @@ public class GetDoctorDashboardQueryHandler
             .CountAsync(x => x.DoctorProfileId == doctorProfile.Id, cancellationToken);
 
         var performance = new DoctorPerformanceDto(
-            PatientsThisMonth: monthlyPatientCount,
+            TotalPatients: totalPatientsCount,
             AverageRating: Math.Round(avgRating, 2),
             TotalReviews: totalReviews);
 
@@ -111,7 +126,7 @@ public class GetDoctorDashboardQueryHandler
                 x.Patient.ProfileImageUrl))
             .ToListAsync(cancellationToken);
 
-        var dashboard = new DoctorDashboardDto(quickStats, nextAppointment, performance, schedule);
+        var dashboard = new DoctorDashboardDto(quickStats, overallStats, nextAppointment, performance, schedule);
         return ApiResponse<DoctorDashboardDto>.Ok(dashboard);
     }
 }

@@ -57,12 +57,19 @@ public sealed record CursorPaginatedResponse<T>(List<T> Items, string? NextCurso
 
 public sealed record DoctorDashboardDto(
     DoctorQuickStatsDto QuickStats,
+    DoctorOverallStatsDto OverallStats,
     DoctorNextAppointmentDto? NextAppointment,
     DoctorPerformanceDto Performance,
     List<DoctorScheduleItemDto> TodaySchedule);
 
 public sealed record DoctorQuickStatsDto(
     int TotalToday,
+    int Completed,
+    int Pending,
+    int Cancelled);
+
+public sealed record DoctorOverallStatsDto(
+    int Total,
     int Completed,
     int Pending,
     int Cancelled);
@@ -77,7 +84,7 @@ public sealed record DoctorNextAppointmentDto(
     string? PatientImageUrl);
 
 public sealed record DoctorPerformanceDto(
-    int PatientsThisMonth,
+    int TotalPatients,
     double AverageRating,
     int TotalReviews);
 

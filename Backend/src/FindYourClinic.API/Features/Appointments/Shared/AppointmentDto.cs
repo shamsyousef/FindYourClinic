@@ -13,7 +13,10 @@ public sealed record AppointmentDto(
     DateTime CreatedAt,
     string RelatedPersonName,
     string? RelatedPersonImageUrl,
-    string? Specialty);
+    string? Specialty,
+    string PaymentStatus,
+    string? PaymentMethod,
+    decimal? AmountPaid);
 
 public static class AppointmentMappings
 {
@@ -28,8 +31,16 @@ public static class AppointmentMappings
         DateTime createdAt,
         string personName,
         string? personImageUrl,
-        string specialty)
+        string specialty,
+        PaymentStatus paymentStatus,
+        PaymentMethod? paymentMethod,
+        decimal? amountPaid)
     {
-        return new AppointmentDto(id, patientId, doctorProfileId, doctorUserId, scheduledAt, locationName, status.ToString(), createdAt, personName, personImageUrl, specialty);
+        return new AppointmentDto(
+            id, patientId, doctorProfileId, doctorUserId, scheduledAt, locationName,
+            status.ToString(), createdAt, personName, personImageUrl, specialty,
+            paymentStatus.ToString(),
+            paymentMethod.HasValue ? paymentMethod.Value.ToString() : null,
+            amountPaid);
     }
 }

@@ -64,7 +64,10 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
             appointment.CreatedAt,
             relatedPersonName,
             relatedPersonImageUrl,
-            appointment.DoctorProfile.Specialty?.Name);
+            appointment.DoctorProfile.Specialty?.Name,
+            appointment.PaymentStatus.ToString(),
+            appointment.PaymentMethod?.ToString(),
+            appointment.AmountPaid);
 
         return ApiResponse<AppointmentDto>.Ok(dto);
     }

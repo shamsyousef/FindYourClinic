@@ -34,12 +34,23 @@ public class AppointmentAutoCompleteService : BackgroundService
             {
                 await ProcessExpiredAppointmentsAsync(stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed while processing expired appointments.");
             }
 
-            await Task.Delay(Interval, stoppingToken);
+            try
+            {
+                await Task.Delay(Interval, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
     }
 

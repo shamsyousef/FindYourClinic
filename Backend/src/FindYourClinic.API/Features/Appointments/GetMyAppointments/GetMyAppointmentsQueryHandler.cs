@@ -41,7 +41,10 @@ public class GetMyAppointmentsQueryHandler : IRequestHandler<GetMyAppointmentsQu
                 x.CreatedAt,
                 $"{x.DoctorProfile.User.FirstName} {x.DoctorProfile.User.LastName}".Trim(),
                 x.DoctorProfile.User.ProfileImageUrl,
-                x.DoctorProfile.Specialty.Name))
+                x.DoctorProfile.Specialty.Name,
+                x.PaymentStatus,
+                x.PaymentMethod,
+                x.AmountPaid))
             .ToListAsync(cancellationToken);
 
         return ApiResponse<List<AppointmentDto>>.Ok(items);

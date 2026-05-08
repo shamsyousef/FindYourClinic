@@ -12,6 +12,16 @@ public class Appointment : AuditableEntity
     public string? LocationName { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
     public bool ReminderSent { get; set; }
+
+    // Payment
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
+    public PaymentMethod? PaymentMethod { get; set; }
+    public string? PaymobOrderId { get; set; }
+    public string? PaymobTransactionId { get; set; }
+    public decimal? AmountPaid { get; set; }
+
     public ApplicationUser Patient { get; set; } = default!;
     public DoctorProfile DoctorProfile { get; set; } = default!;
+    public Transaction? Transaction { get; set; }
 }
+

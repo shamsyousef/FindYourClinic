@@ -42,12 +42,46 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
             throw new BadRequestException("Completed appointments cannot be cancelled.");
         }
 
-        if (appointment.ScheduledAt <= DateTime.UtcNow.AddHours(24))
+        if (appointment.Status == AppointmentStatus.Cancelled)
+        {
+            throw new BadRequestException("Appointment is already cancelled.");
+        }
+
+        // PendingPayment (cash) can be cancelled without time restriction
+        if (appointment.Status != AppointmentStatus.PendingPayment &&
+            appointment.ScheduledAt <= DateTime.UtcNow.AddHours(24))
         {
             throw new BadRequestException("Appointments cannot be cancelled within 24 hours of the scheduled time.");
         }
 
         appointment.Status = AppointmentStatus.Cancelled;
+
+        // Handle refund for paid appointments
+        if (appointment.PaymentStatus == PaymentStatus.Paid)
+        {
+            appointment.PaymentStatus = PaymentStatus.Refunded;
+
+            // Update transaction status
+            var transaction = await _dbContext.Transactions
+                .FirstOrDefaultAsync(x => x.AppointmentId == appointment.Id, cancellationToken);
+
+            if (transaction is not null)
+            {
+                transaction.Status = PaymentStatus.Refunded;
+
+                // Revert doctor wallet
+                var wallet = await _dbContext.DoctorWallets
+                    .FirstOrDefaultAsync(x => x.DoctorProfileId == appointment.DoctorProfileId, cancellationToken);
+
+                if (wallet is not null)
+                {
+                    wallet.TotalEarnings -= transaction.DoctorEarnings;
+                    wallet.PendingBalance -= transaction.DoctorEarnings;
+                }
+            }
+            // Note: Actual Paymob refund API call would be added here for production
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         Guid targetUserId;

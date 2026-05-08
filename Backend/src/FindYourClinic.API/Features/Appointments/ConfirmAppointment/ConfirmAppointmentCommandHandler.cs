@@ -37,11 +37,15 @@ public class ConfirmAppointmentCommandHandler : IRequestHandler<ConfirmAppointme
             throw new ForbiddenException("You cannot confirm this appointment.");
         }
 
-        if (appointment.Status != AppointmentStatus.Scheduled)
+        if (appointment.Status != AppointmentStatus.Scheduled && appointment.Status != AppointmentStatus.PendingPayment)
         {
-            throw new BadRequestException("Only scheduled appointments can be confirmed.");
+            throw new BadRequestException("Only scheduled or pending-payment appointments can be confirmed.");
         }
 
+        // Doctor approval transitions both flows directly to Confirmed:
+        //   - Online (Scheduled) → Confirmed
+        //   - Cash (PendingPayment) → Confirmed (single approval step; payment
+        //     is collected later via MarkAsPaid).
         appointment.Status = AppointmentStatus.Confirmed;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
