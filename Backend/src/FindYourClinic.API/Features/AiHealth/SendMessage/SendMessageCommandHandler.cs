@@ -56,6 +56,6 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Sen
         _dbContext.AiChatMessages.Add(assistantMessage);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new SendMessageResult(assistantMessage.Content, assistantMessage.CreatedAt);
+        return new SendMessageResult(assistantMessage.Role, assistantMessage.Content, assistantMessage.CreatedAt);
     }
 }

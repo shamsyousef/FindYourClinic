@@ -241,7 +241,7 @@ class SymptomResultScreen extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.pushNamed(
         RouteNames.search,
-        queryParameters: {'specialtyId': analysis.specialistType},
+        queryParameters: {'specialtyName': analysis.specialistType},
       ),
       child: Container(
         height: 52,
