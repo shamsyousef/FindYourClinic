@@ -59,6 +59,7 @@ class RouteNames {
   // Settings
   static const settings = 'settings';
   static const changePassword = 'changePassword';
+  static const helpSupport = 'helpSupport';
 
   // AI Health
   static const aiChat = 'aiChat';

@@ -226,14 +226,6 @@ class _ProfileBody extends StatelessWidget {
             subtitle: 'Theme, language & more',
             onTap: () => context.push('/settings'),
           ),
-          _SettingsTile(
-            icon: Icons.help_outline,
-            iconBg: cs.onSurface.withAlpha(20),
-            iconColor: cs.onSurface.withAlpha(180),
-            title: 'Help & Support',
-            subtitle: 'FAQ & contact support',
-            onTap: () {},
-          ),
 
           const SizedBox(height: 16),
 

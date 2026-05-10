@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../accessibility/domain/entities/screen_context.dart';
+import '../../../accessibility/presentation/cubits/voice_assistant_cubit.dart';
 import '../../domain/entities/appointment_entity.dart';
 import '../cubits/appointment_cubit.dart';
 import '../cubits/appointment_state.dart';
@@ -23,11 +25,33 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  static const _screenContext =
+      ScreenContext(screen: PatientScreen.appointments);
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     context.read<AppointmentCubit>().loadPatientAppointments();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Silent context registration — speech only on user request.
+      context.read<VoiceAssistantCubit>().setScreenContext(
+            _screenContext,
+            summary: _buildScreenSummary,
+          );
+    });
+  }
+
+  String _buildScreenSummary() {
+    final state = context.read<AppointmentCubit>().state;
+    if (state is AppointmentListLoaded) {
+      return 'My appointments. ${state.upcoming.length} upcoming, '
+          '${state.completed.length} completed, '
+          '${state.cancelled.length} cancelled. '
+          "Say 'when is my next appointment' to hear the next one.";
+    }
+    return 'My appointments. Loading.';
   }
 
   @override

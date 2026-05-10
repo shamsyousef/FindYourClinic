@@ -202,7 +202,7 @@ class _ProfileBody extends StatelessWidget {
               ],
             ),
           ),
-  
+
           // ─── My Health ───
           _SectionHeader('MY HEALTH'),
           _SettingsTile(
@@ -237,9 +237,9 @@ class _ProfileBody extends StatelessWidget {
             subtitle: 'Find clinics near you',
             onTap: () => context.push('/nearby-clinics'),
           ),
-  
+
           const SizedBox(height: 8),
-  
+
           // ─── Account ───
           _SectionHeader('ACCOUNT'),
           _SettingsTile(
@@ -274,17 +274,9 @@ class _ProfileBody extends StatelessWidget {
             subtitle: 'Theme, language & more',
             onTap: () => context.push('/settings'),
           ),
-          _SettingsTile(
-            icon: Icons.help_outline,
-            iconBg: cs.onSurface.withAlpha(20),
-            iconColor: cs.onSurface.withAlpha(180),
-            title: 'Help & Support',
-            subtitle: 'FAQ & contact support',
-            onTap: () {},
-          ),
-  
+
           const SizedBox(height: 16),
-  
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(

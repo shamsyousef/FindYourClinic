@@ -11,6 +11,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../accessibility/domain/entities/screen_context.dart';
+import '../../../accessibility/presentation/cubits/voice_assistant_cubit.dart';
 import '../../../chat/domain/usecases/start_conversation_usecase.dart';
 import '../../domain/entities/doctor_profile_entities.dart';
 import '../cubits/doctor_profile_cubit.dart';
@@ -42,6 +44,59 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     context.read<DoctorProfileCubit>().loadProfile(widget.doctorId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Bare context — gets enriched with doctor data once the profile loads
+      // (see _publishContextFromLoaded in build()).
+      context.read<VoiceAssistantCubit>().setScreenContext(
+            const ScreenContext(screen: PatientScreen.doctorProfile),
+            summary: _buildScreenSummary,
+          );
+    });
+  }
+
+  /// Re-registers the screen context once the doctor's data is available so
+  /// commands like "book appointment" can read the doctor profile id and the
+  /// next available slot directly from the cubit's screen context.
+  void _publishContextFromLoaded(DoctorProfileLoaded loaded) {
+    final d = loaded.details;
+    context.read<VoiceAssistantCubit>().setScreenContext(
+      ScreenContext(
+        screen: PatientScreen.doctorProfile,
+        data: {
+          ScreenContextKeys.doctorProfileId: d.doctorProfileId,
+          ScreenContextKeys.doctorUserId: d.doctorId,
+          ScreenContextKeys.doctorName: d.fullName,
+          ScreenContextKeys.doctorSpecialty: d.specialty,
+          ScreenContextKeys.consultationFee: d.consultationFee,
+          if (d.clinicName != null) ScreenContextKeys.clinicName: d.clinicName,
+          if (d.nextAvailableSlot != null)
+            ScreenContextKeys.nextAvailableSlotIso:
+                d.nextAvailableSlot!.toIso8601String(),
+        },
+      ),
+      summary: _buildScreenSummary,
+    );
+  }
+
+  String _buildScreenSummary() {
+    final state = context.read<DoctorProfileCubit>().state;
+    final loaded = switch (state) {
+      DoctorProfileLoaded() => state,
+      DoctorProfileReviewSuccess(:final loaded) => loaded,
+      DoctorProfileReviewError(:final loaded) => loaded,
+      _ => null,
+    };
+    if (loaded == null) return 'Doctor profile. Still loading.';
+    final d = loaded.details;
+    final fee = d.consultationFee.toStringAsFixed(0);
+    final rating = d.avgRating > 0
+        ? '${d.avgRating.toStringAsFixed(1)} stars from ${d.reviewsCount} reviews. '
+        : 'No reviews yet. ';
+    return 'Doctor ${d.fullName}, ${d.specialty}. '
+        '$rating'
+        'Consultation fee $fee. '
+        "Say 'book appointment' to book, or 'go back' to return.";
   }
 
   @override
@@ -68,7 +123,20 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DoctorProfileCubit, DoctorProfileState>(
+    return BlocConsumer<DoctorProfileCubit, DoctorProfileState>(
+      listenWhen: (prev, curr) =>
+          curr is DoctorProfileLoaded ||
+          curr is DoctorProfileReviewSuccess ||
+          curr is DoctorProfileReviewError,
+      listener: (_, state) {
+        final loaded = switch (state) {
+          DoctorProfileLoaded() => state,
+          DoctorProfileReviewSuccess(:final loaded) => loaded,
+          DoctorProfileReviewError(:final loaded) => loaded,
+          _ => null,
+        };
+        if (loaded != null) _publishContextFromLoaded(loaded);
+      },
       builder: (context, state) {
         if (state is DoctorProfileLoading || state is DoctorProfileInitial) {
           return const Scaffold(

@@ -6,6 +6,10 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../accessibility/domain/entities/screen_context.dart';
+import '../../../accessibility/presentation/cubits/voice_assistant_cubit.dart';
+import '../../../accessibility/presentation/cubits/voice_assistant_visibility_cubit.dart';
+import '../../../accessibility/presentation/widgets/voice_assistant_card.dart';
 import '../../../notifications/presentation/cubits/notification_badge_cubit.dart';
 import '../../../notifications/presentation/cubits/notification_badge_state.dart';
 import '../cubits/patient_home_cubit.dart';
@@ -24,25 +28,66 @@ class PatientHomeScreen extends StatefulWidget {
 }
 
 class _PatientHomeScreenState extends State<PatientHomeScreen> {
+  static const _screenContext = ScreenContext(screen: PatientScreen.home);
+
   @override
   void initState() {
     super.initState();
     context.read<PatientHomeCubit>().loadDashboard();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Register screen context only — never auto-speak. The summary is read
+      // out only when the user explicitly says "read this screen".
+      context.read<VoiceAssistantCubit>().setScreenContext(
+            _screenContext,
+            summary: _buildScreenSummary,
+          );
+    });
+  }
+
+  @override
+  void dispose() {
+    // Best-effort: clear the screen context if the cubit is still alive.
+    // The shell owns the cubit, so we don't close it here.
+    super.dispose();
+  }
+
+  String _buildScreenSummary() {
+    final state = context.read<PatientHomeCubit>().state;
+    if (state is! PatientHomeLoaded) {
+      return 'Home. Loading your dashboard.';
+    }
+    final summary = state.summary;
+    final upcoming = summary.upcomingAppointment;
+    final parts = <String>['Home.'];
+    if (upcoming != null) {
+      parts.add('Your next appointment is with Doctor ${upcoming.doctorName}.');
+    } else {
+      parts.add('You have no upcoming appointments.');
+    }
+    if (summary.topDoctors.isNotEmpty) {
+      parts.add('${summary.topDoctors.length} top doctors are listed.');
+    }
+    parts.add(
+      "Tap the microphone or say things like 'find a cardiologist', "
+      "'my appointments', or 'help'.",
+    );
+    return parts.join(' ');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocBuilder<PatientHomeCubit, PatientHomeState>(
-        builder: (context, state) => switch (state) {
-          PatientHomeInitial() || PatientHomeLoading() => const Center(
+        body: BlocBuilder<PatientHomeCubit, PatientHomeState>(
+          builder: (context, state) => switch (state) {
+            PatientHomeInitial() || PatientHomeLoading() => const Center(
               child: CircularProgressIndicator(),
             ),
-          PatientHomeError(:final message) => ErrorView(
+            PatientHomeError(:final message) => ErrorView(
               message: message,
               onRetry: () => context.read<PatientHomeCubit>().loadDashboard(),
             ),
-          PatientHomeLoaded(:final summary) => RefreshIndicator(
+            PatientHomeLoaded(:final summary) => RefreshIndicator(
               onRefresh: () => context.read<PatientHomeCubit>().loadDashboard(),
               child: CustomScrollView(
                 slivers: [
@@ -68,27 +113,32 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         child: SafeArea(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                            child: BlocBuilder<NotificationBadgeCubit,
-                                NotificationBadgeState>(
-                              builder: (context, badgeState) {
-                                final count = badgeState
-                                        is NotificationBadgeLoaded
-                                    ? badgeState.unreadCount
-                                    : 0;
-                                return GreetingHeader(
-                                  unreadNotificationCount: count,
-                                  onNotificationTap: () => context
-                                      .pushNamed('notifications')
-                                      .then((_) {
-                                    if (context.mounted) {
-                                      context
-                                          .read<NotificationBadgeCubit>()
-                                          .loadUnreadCount();
-                                    }
-                                  }),
-                                );
-                              },
-                            ),
+                            child:
+                                BlocBuilder<
+                                  NotificationBadgeCubit,
+                                  NotificationBadgeState
+                                >(
+                                  builder: (context, badgeState) {
+                                    final count =
+                                        badgeState is NotificationBadgeLoaded
+                                        ? badgeState.unreadCount
+                                        : 0;
+                                    return GreetingHeader(
+                                      unreadNotificationCount: count,
+                                      onNotificationTap: () => context
+                                          .pushNamed('notifications')
+                                          .then((_) {
+                                            if (context.mounted) {
+                                              context
+                                                  .read<
+                                                    NotificationBadgeCubit
+                                                  >()
+                                                  .loadUnreadCount();
+                                            }
+                                          }),
+                                    );
+                                  },
+                                ),
                           ),
                         ),
                       ),
@@ -103,10 +153,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         onTap: () => context.pushNamed('search'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness ==
-                                    Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? AppColors.darkSurface
                                 : AppColors.surface,
                             borderRadius: BorderRadius.circular(14),
@@ -121,13 +173,17 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.search,
-                                  color: AppColors.textHint, size: 22),
+                              Icon(
+                                Icons.search,
+                                color: AppColors.textHint,
+                                size: 22,
+                              ),
                               const SizedBox(width: 12),
                               Text(
                                 'Search doctors, specialties...',
-                                style: AppTextStyles.bodyMd
-                                    .copyWith(color: AppColors.textHint),
+                                style: AppTextStyles.bodyMd.copyWith(
+                                  color: AppColors.textHint,
+                                ),
                               ),
                             ],
                           ),
@@ -156,11 +212,25 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                           return SpecialtyChip(
                             name: s.name,
                             iconUrl: s.iconUrl,
-                            onTap: () => context.pushNamed('search',
-                                queryParameters: {'specialtyId': s.id}),
+                            onTap: () => context.pushNamed(
+                              'search',
+                              queryParameters: {'specialtyId': s.id},
+                            ),
                           );
                         },
                       ),
+                    ),
+                  ),
+
+                  // ─── Voice Assistant (Accessibility) ───
+                  SliverToBoxAdapter(
+                    child: BlocBuilder<VoiceAssistantVisibilityCubit, bool>(
+                      builder: (_, visible) => visible
+                          ? const Padding(
+                              padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+                              child: VoiceAssistantCard(),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
 
@@ -172,8 +242,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Upcoming Appointment',
-                                style: AppTextStyles.heading3),
+                            Text(
+                              'Upcoming Appointment',
+                              style: AppTextStyles.heading3,
+                            ),
                             const SizedBox(height: 12),
                             UpcomingAppointmentCard(
                               appointment: summary.upcomingAppointment!,
@@ -190,11 +262,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Health Overview',
-                              style: AppTextStyles.heading3),
+                          Text(
+                            'Health Overview',
+                            style: AppTextStyles.heading3,
+                          ),
                           const SizedBox(height: 12),
-                          HealthStatsCard(
-                              healthSummary: summary.healthSummary),
+                          HealthStatsCard(healthSummary: summary.healthSummary),
                         ],
                       ),
                     ),
@@ -207,8 +280,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('AI Health Tools',
-                              style: AppTextStyles.heading3),
+                          Text(
+                            'AI Health Tools',
+                            style: AppTextStyles.heading3,
+                          ),
                           const SizedBox(height: 10),
                           Row(
                             children: [
@@ -221,8 +296,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                                     AppColors.gradientStart,
                                     AppColors.gradientMiddle,
                                   ],
-                                  onTap: () => context
-                                      .pushNamed(RouteNames.aiChat),
+                                  onTap: () =>
+                                      context.pushNamed(RouteNames.aiChat),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -235,8 +310,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                                     AppColors.gradientMiddle,
                                     AppColors.gradientEnd,
                                   ],
-                                  onTap: () => context
-                                      .pushNamed(RouteNames.symptomChecker),
+                                  onTap: () => context.pushNamed(
+                                    RouteNames.symptomChecker,
+                                  ),
                                 ),
                               ),
                             ],
@@ -274,8 +350,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                           final doctor = summary.topDoctors[index];
                           return TopDoctorCard(
                             doctor: doctor,
-                            onTap: () => context.pushNamed('doctorDetails',
-                                pathParameters: {'id': doctor.doctorId}),
+                            onTap: () => context.pushNamed(
+                              'doctorDetails',
+                              pathParameters: {'id': doctor.doctorId},
+                            ),
                           );
                         },
                       ),
@@ -308,8 +386,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                                   color: Colors.white.withAlpha(40),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.location_on,
-                                    color: Colors.white, size: 28),
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -318,20 +399,25 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                                   children: [
                                     Text(
                                       'Nearby Clinics',
-                                      style: AppTextStyles.heading3
-                                          .copyWith(color: Colors.white),
+                                      style: AppTextStyles.heading3.copyWith(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Find clinics around you on the map',
-                                      style: AppTextStyles.bodySm
-                                          .copyWith(color: Colors.white70),
+                                      style: AppTextStyles.bodySm.copyWith(
+                                        color: Colors.white70,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.arrow_forward_ios,
-                                  color: Colors.white70, size: 18),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white70,
+                                size: 18,
+                              ),
                             ],
                           ),
                         ),
@@ -343,9 +429,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ],
               ),
             ),
-        },
-      ),
-    );
+          },
+        ),
+      );
   }
 }
 
@@ -403,16 +489,16 @@ class _AiToolCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 10),
               ),
               const SizedBox(height: 6),
               Align(
                 alignment: Alignment.centerRight,
-                child: Icon(Icons.arrow_forward_ios,
-                    color: Colors.white60, size: 12),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white60,
+                  size: 12,
+                ),
               ),
             ],
           ),

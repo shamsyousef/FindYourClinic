@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../di/service_locator.dart';
 import '../utils/token_storage.dart';
+import '../../features/accessibility/domain/entities/voice_command_intent.dart';
+import '../../features/accessibility/presentation/cubits/voice_assistant_cubit.dart';
+import '../../features/accessibility/presentation/cubits/voice_assistant_visibility_cubit.dart';
+import '../../features/accessibility/presentation/widgets/voice_assistant_fab.dart';
 import '../../features/auth/presentation/cubits/auth_cubit.dart';
 import '../../features/auth/presentation/cubits/specialty_cubit.dart';
 import '../../features/auth/presentation/screens/doctor_rejected_screen.dart';
@@ -29,6 +33,7 @@ import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/doctor_home/presentation/cubits/insights_cubit.dart';
 import '../../features/doctor_home/presentation/screens/doctor_insights_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/help_support/presentation/screens/help_support_screen.dart';
 import '../../features/doctor_profile/presentation/cubits/doctor_profile_cubit.dart';
 import '../../features/doctor_profile/presentation/cubits/edit_doctor_profile_cubit.dart';
 import '../../features/doctor_profile/presentation/screens/doctor_profile_screen.dart';
@@ -324,6 +329,13 @@ class AppRouter {
           create: (_) => sl<AuthCubit>(),
           child: const ChangePasswordScreen(),
         ),
+      ),
+
+      // ─── Help & Support ───
+      GoRoute(
+        path: '/help-support',
+        name: RouteNames.helpSupport,
+        builder: (context, state) => const HelpSupportScreen(),
       ),
 
       // ─── Book Appointment ───
@@ -628,13 +640,59 @@ class _PatientShellState extends State<_PatientShell> {
   DateTime? _lastPressedAt;
   late final ConversationsCubit _conversationsCubit;
   late final NotificationBadgeCubit _notificationBadgeCubit;
+  late final VoiceAssistantCubit _voiceAssistantCubit;
+  late final VoiceAssistantVisibilityCubit _voiceVisibilityCubit;
 
   @override
   void initState() {
     super.initState();
     _conversationsCubit = sl<ConversationsCubit>()..loadConversations();
     _notificationBadgeCubit = sl<NotificationBadgeCubit>()..loadUnreadCount();
+    _voiceVisibilityCubit = sl<VoiceAssistantVisibilityCubit>();
+    _voiceAssistantCubit = sl<VoiceAssistantCubit>()
+      ..attachNavigationHandler(_handleVoiceIntent);
     _registerFcmToken();
+  }
+
+  /// Side-effects only (navigation). TTS is owned by the cubit, which has
+  /// already spoken Gemini's `spokenResponse` before calling us — so this
+  /// method must NOT speak again or we get double-speech.
+  Future<void> _handleVoiceIntent(VoiceCommandIntent intent) async {
+    if (!mounted) return;
+    switch (intent) {
+      case NavigateHomeIntent():
+        widget.navigationShell.goBranch(0);
+      case NavigateAppointmentsIntent():
+        widget.navigationShell.goBranch(1);
+      case NavigateHealthRecordsIntent():
+        widget.navigationShell.goBranch(3);
+      case NavigateProfileIntent():
+        widget.navigationShell.goBranch(4);
+      case NavigateSearchIntent(:final query):
+        if (query != null && query.trim().isNotEmpty) {
+          context.pushNamed(
+            'search',
+            queryParameters: {'specialtyName': query.trim()},
+          );
+        } else {
+          context.pushNamed('search');
+        }
+      case NavigateNearbyClinicsIntent():
+        context.pushNamed('nearbyClinics');
+      case NavigateAiChatIntent():
+        context.pushNamed('aiChat');
+      case NavigateNotificationsIntent():
+        context.pushNamed('notifications');
+      case BookAppointmentIntent():
+        // Cubit already spoke Gemini's confirmation; just navigate.
+        context.pushNamed('search');
+      case GoBackIntent():
+        if (context.canPop()) context.pop();
+      default:
+        // ReadScreen / SelectItem / ReadNextAppointment / Help / Cancel /
+        // Unknown are fully handled inside VoiceAssistantCubit (TTS only).
+        break;
+    }
   }
 
   Future<void> _registerFcmToken() async {
@@ -649,7 +707,8 @@ class _PatientShellState extends State<_PatientShell> {
   @override
   void dispose() {
     _conversationsCubit.close();
-    // _notificationBadgeCubit is a lazy singleton — not closed here
+    // _notificationBadgeCubit, _voiceVisibilityCubit and _voiceAssistantCubit
+    // are lazy singletons shared across screens — not closed here.
     super.dispose();
   }
 
@@ -659,6 +718,10 @@ class _PatientShellState extends State<_PatientShell> {
       providers: [
         BlocProvider.value(value: _conversationsCubit),
         BlocProvider.value(value: _notificationBadgeCubit),
+        BlocProvider<VoiceAssistantCubit>.value(value: _voiceAssistantCubit),
+        BlocProvider<VoiceAssistantVisibilityCubit>.value(
+          value: _voiceVisibilityCubit,
+        ),
       ],
       child: PopScope(
         canPop: false,
@@ -684,6 +747,8 @@ class _PatientShellState extends State<_PatientShell> {
         },
         child: Scaffold(
           body: widget.navigationShell,
+          floatingActionButton: const VoiceAssistantFab(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           bottomNavigationBar: BlocBuilder<ConversationsCubit, ConversationsState>(
             builder: (context, state) {
               int unreadCount = 0;

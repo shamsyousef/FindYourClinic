@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 
 import '../../../../core/widgets/widgets.dart';
+import '../../../accessibility/domain/entities/screen_context.dart';
+import '../../../accessibility/presentation/cubits/voice_assistant_cubit.dart';
 import '../../domain/entities/doctor_search_entities.dart';
 import '../cubits/search_cubit.dart';
 import '../cubits/search_state.dart';
@@ -30,6 +32,9 @@ class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
   Timer? _debounce;
 
+  static const _screenContext =
+      ScreenContext(screen: PatientScreen.searchResults);
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +48,52 @@ class _SearchScreenState extends State<SearchScreen> {
     context.read<SearchCubit>().search(filters);
 
     _scrollController.addListener(_onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Silent context registration — speech only on user request.
+      context.read<VoiceAssistantCubit>().setScreenContext(
+            _screenContext,
+            summary: _buildScreenSummary,
+            itemSelector: _selectDoctorByOrdinal,
+          );
+    });
+  }
+
+  String _buildScreenSummary() {
+    final state = context.read<SearchCubit>().state;
+    final items = switch (state) {
+      SearchLoaded(:final result) => result.items,
+      SearchLoadingMore(:final currentResult) => currentResult.items,
+      _ => const <DoctorSearchResult>[],
+    };
+    if (items.isEmpty) return 'No doctors found.';
+    final buffer = StringBuffer('${items.length} doctors. ');
+    final readN = items.length > 6 ? 6 : items.length;
+    for (var i = 0; i < readN; i++) {
+      final d = items[i];
+      buffer.write('${i + 1}: Doctor ${d.fullName}, ${d.specialty}. ');
+    }
+    if (items.length > readN) {
+      buffer.write('And ${items.length - readN} more.');
+    }
+    return buffer.toString();
+  }
+
+  bool _selectDoctorByOrdinal(int oneBasedIndex) {
+    final state = context.read<SearchCubit>().state;
+    final items = switch (state) {
+      SearchLoaded(:final result) => result.items,
+      SearchLoadingMore(:final currentResult) => currentResult.items,
+      _ => const <DoctorSearchResult>[],
+    };
+    if (oneBasedIndex < 1 || oneBasedIndex > items.length) return false;
+    final doctor = items[oneBasedIndex - 1];
+    context.pushNamed(
+      'doctorDetails',
+      pathParameters: {'id': doctor.doctorId},
+    );
+    return true;
   }
 
   void _onScroll() {
