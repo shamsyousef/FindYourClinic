@@ -1,6 +1,7 @@
 using FindYourClinic.API.Common;
 using FindYourClinic.API.Features.AiHealth.AnalyzeSymptoms;
 using FindYourClinic.API.Features.AiHealth.GetChatHistory;
+using FindYourClinic.API.Features.AiHealth.ProcessVoiceCommand;
 using FindYourClinic.API.Features.AiHealth.SendMessage;
 using FindYourClinic.Domain.Common;
 using MediatR;
@@ -47,8 +48,34 @@ public class AiHealthController : ControllerBase
         return Ok(ApiResponse<SymptomAnalysisResult>.Ok(result));
     }
 
+    /// <summary>
+    /// One-shot voice-command intent parsing for the blind-patient assistant.
+    /// Does NOT store anything in chat history.
+    /// </summary>
+    [HttpPost("voice-command")]
+    [EnableRateLimiting("ai_limited")]
+    public async Task<IActionResult> ProcessVoiceCommand(
+        [FromBody] VoiceCommandRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new ProcessVoiceCommandCommand(
+                request.Transcript,
+                request.CurrentScreen,
+                request.ScreenContextJson),
+            cancellationToken);
+        return Ok(ApiResponse<ProcessVoiceCommandResult>.Ok(result));
+    }
+
     public sealed class SendMessageRequest
     {
         public string Content { get; set; } = string.Empty;
+    }
+
+    public sealed class VoiceCommandRequest
+    {
+        public string Transcript { get; set; } = string.Empty;
+        public string? CurrentScreen { get; set; }
+        public string? ScreenContextJson { get; set; }
     }
 }
