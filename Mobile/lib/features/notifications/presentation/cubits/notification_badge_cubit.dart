@@ -18,7 +18,6 @@ class NotificationBadgeCubit extends Cubit<NotificationBadgeState> {
       case Success(:final data):
         emit(NotificationBadgeLoaded(data));
       case Error():
-        // Keep existing state on error — badge silently stays unchanged
         break;
     }
   }
@@ -28,6 +27,13 @@ class NotificationBadgeCubit extends Cubit<NotificationBadgeState> {
         ? (state as NotificationBadgeLoaded).unreadCount
         : 0;
     emit(NotificationBadgeLoaded(current + 1));
+  }
+
+  void decrement() {
+    final current = state is NotificationBadgeLoaded
+        ? (state as NotificationBadgeLoaded).unreadCount
+        : 0;
+    if (current > 0) emit(NotificationBadgeLoaded(current - 1));
   }
 
   void reset() => emit(const NotificationBadgeLoaded(0));

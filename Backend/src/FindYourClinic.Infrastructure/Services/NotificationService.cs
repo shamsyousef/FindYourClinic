@@ -71,7 +71,8 @@ public class NotificationService : INotificationService
                     Priority = Priority.High,
                     Notification = new AndroidNotification
                     {
-                        Sound = "default"
+                        Sound = "default",
+                        ChannelId = "high_importance_channel"
                     }
                 },
                 Apns = new ApnsConfig

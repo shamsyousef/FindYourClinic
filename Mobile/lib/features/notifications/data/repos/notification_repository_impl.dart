@@ -25,7 +25,6 @@ class NotificationRepositoryImpl implements NotificationRepository {
         queryParameters: {'page': page, 'pageSize': pageSize},
       );
       final data = response.data['data'];
-      // Handle both list and paginated response shapes
       final List items = data is List ? data : (data['items'] ?? data);
       final notifications = items
           .map((e) => AppNotificationModel.fromJson(e).toEntity())
@@ -46,7 +45,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
         queryParameters: {'page': 1, 'pageSize': 1},
       );
       final data = response.data['data'];
-      final unreadCount = (data is Map) ? ((data['unreadCount'] as num?)?.toInt() ?? 0) : 0;
+      final unreadCount =
+          (data is Map) ? ((data['unreadCount'] as num?)?.toInt() ?? 0) : 0;
       return Success(unreadCount);
     } on DioException catch (e) {
       return Error(mapDioException(e));
@@ -75,6 +75,18 @@ class NotificationRepositoryImpl implements NotificationRepository {
         ApiEndpoints.deviceToken,
         data: {'token': token},
       );
+      return const Success(null);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (e) {
+      return Error(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<ApiResult<void>> markAllAsRead() async {
+    try {
+      await _apiClient.dio.put(ApiEndpoints.markAllNotificationsRead);
       return const Success(null);
     } on DioException catch (e) {
       return Error(mapDioException(e));

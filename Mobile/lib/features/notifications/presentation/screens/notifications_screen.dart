@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../../../core/utils/token_storage.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../cubits/notifications_cubit.dart';
@@ -25,20 +28,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
-      body: BlocBuilder<NotificationsCubit, NotificationsState>(
-        builder: (context, state) => switch (state) {
-          NotificationsInitial() || NotificationsLoading() => const Center(
-              child: CircularProgressIndicator(),
-            ),
-          NotificationsError(:final message) => ErrorView(
-              message: message,
-              onRetry: () =>
-                  context.read<NotificationsCubit>().loadNotifications(),
-            ),
-          NotificationsLoaded(:final notifications) =>
-            notifications.isEmpty
+    return BlocBuilder<NotificationsCubit, NotificationsState>(
+      builder: (context, state) {
+        final hasUnread = state is NotificationsLoaded &&
+            state.notifications.any((n) => !n.isRead);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Notifications'),
+            actions: [
+              if (hasUnread)
+                TextButton(
+                  onPressed: () =>
+                      context.read<NotificationsCubit>().markAllAsRead(),
+                  child: const Text('Mark all read'),
+                ),
+            ],
+          ),
+          body: switch (state) {
+            NotificationsInitial() || NotificationsLoading() => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            NotificationsError(:final message) => ErrorView(
+                message: message,
+                onRetry: () =>
+                    context.read<NotificationsCubit>().loadNotifications(),
+              ),
+            NotificationsLoaded(:final notifications) => notifications.isEmpty
                 ? const EmptyStateView(
                     icon: Icons.notifications_none,
                     title: 'No Notifications',
@@ -55,20 +71,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         final notif = notifications[index];
                         return _NotificationCard(
                           notification: notif,
-                          onTap: () {
+                          onTap: () async {
                             if (!notif.isRead) {
                               context
                                   .read<NotificationsCubit>()
                                   .markAsRead(notif.id);
                             }
+                            if (context.mounted) _navigate(context, notif);
                           },
                         );
                       },
                     ),
                   ),
-        },
-      ),
+          },
+        );
+      },
     );
+  }
+
+  Future<void> _navigate(BuildContext context, AppNotification notif) async {
+    final type = notif.type ?? '';
+    final ref = notif.referenceId;
+    if (type.startsWith('appointment_') && ref != null) {
+      final role = await sl<TokenStorage>().getUserRole();
+      if (!context.mounted) return;
+      final isDoctor = role == 'Doctor';
+      context.push('/appointment/$ref${isDoctor ? '?doctor=true' : ''}');
+    } else if (type == 'new_message' && ref != null) {
+      context.push('/chat/$ref');
+    }
   }
 }
 
@@ -82,16 +113,12 @@ class _NotificationCard extends StatelessWidget {
   });
 
   IconData get _icon {
-    switch (notification.type?.toLowerCase()) {
-      case 'appointment':
-        return Icons.calendar_today;
-      case 'review':
-        return Icons.star;
-      case 'message':
-        return Icons.chat_bubble;
-      default:
-        return Icons.notifications;
-    }
+    final t = notification.type ?? '';
+    if (t.startsWith('appointment_')) return Icons.calendar_today;
+    if (t == 'new_message') return Icons.chat_bubble;
+    if (t == 'new_review') return Icons.star;
+    if (t.startsWith('doctor_')) return Icons.verified_user;
+    return Icons.notifications;
   }
 
   @override
@@ -155,7 +182,7 @@ class _NotificationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _formatDate(notification.createdAt),
+                    formatRelativeTime(notification.createdAt),
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.textHint),
                   ),
@@ -176,9 +203,5 @@ class _NotificationCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return formatRelativeTime(date);
   }
 }

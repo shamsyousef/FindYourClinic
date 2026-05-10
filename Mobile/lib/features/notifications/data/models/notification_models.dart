@@ -6,6 +6,7 @@ class AppNotificationModel {
   final String title;
   final String body;
   final String? type;
+  final String? referenceId;
   final bool isRead;
   final DateTime createdAt;
 
@@ -14,6 +15,7 @@ class AppNotificationModel {
     required this.title,
     required this.body,
     this.type,
+    this.referenceId,
     required this.isRead,
     required this.createdAt,
   });
@@ -24,6 +26,7 @@ class AppNotificationModel {
       title: json['title'] ?? '',
       body: json['body'] ?? json['message'] ?? '',
       type: json['type'],
+      referenceId: json['referenceId'],
       isRead: json['isRead'] ?? false,
       createdAt: parseServerDateTime(json['createdAt']),
     );
@@ -34,6 +37,7 @@ class AppNotificationModel {
         title: title,
         body: body,
         type: type,
+        referenceId: referenceId,
         isRead: isRead,
         createdAt: createdAt,
       );

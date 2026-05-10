@@ -1,4 +1,5 @@
 using FindYourClinic.API.Features.Notifications.GetMyNotifications;
+using FindYourClinic.API.Features.Notifications.MarkAllNotificationsRead;
 using FindYourClinic.API.Features.Notifications.MarkNotificationRead;
 using FindYourClinic.API.Features.Notifications.RemoveDeviceToken;
 using FindYourClinic.API.Features.Notifications.UpdateDeviceToken;
@@ -45,6 +46,13 @@ public class NotificationsController : ControllerBase
     public async Task<IActionResult> MarkAsRead([FromRoute] Guid id)
     {
         var result = await _mediator.Send(new MarkNotificationReadCommand(id));
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPut("read-all")]
+    public async Task<IActionResult> MarkAllAsRead()
+    {
+        var result = await _mediator.Send(new MarkAllNotificationsReadCommand());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 }

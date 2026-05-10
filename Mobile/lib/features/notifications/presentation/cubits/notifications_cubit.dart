@@ -3,17 +3,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/api_result.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../../domain/usecases/notification_usecases.dart';
+import 'notification_badge_cubit.dart';
 import 'notifications_state.dart';
 
 class NotificationsCubit extends Cubit<NotificationsState> {
   final GetNotificationsUseCase _getNotificationsUseCase;
   final MarkNotificationReadUseCase _markReadUseCase;
+  final MarkAllNotificationsReadUseCase _markAllReadUseCase;
+  final NotificationBadgeCubit _badgeCubit;
 
   NotificationsCubit({
     required GetNotificationsUseCase getNotificationsUseCase,
     required MarkNotificationReadUseCase markReadUseCase,
+    required MarkAllNotificationsReadUseCase markAllReadUseCase,
+    required NotificationBadgeCubit badgeCubit,
   })  : _getNotificationsUseCase = getNotificationsUseCase,
         _markReadUseCase = markReadUseCase,
+        _markAllReadUseCase = markAllReadUseCase,
+        _badgeCubit = badgeCubit,
         super(NotificationsInitial());
 
   Future<void> loadNotifications() async {
@@ -38,6 +45,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
             title: n.title,
             body: n.body,
             type: n.type,
+            referenceId: n.referenceId,
             isRead: true,
             createdAt: n.createdAt,
           );
@@ -45,6 +53,32 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return n;
       }).toList();
       emit(NotificationsLoaded(updated));
+      _badgeCubit.decrement();
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    if (state is! NotificationsLoaded) return;
+    final current = (state as NotificationsLoaded).notifications;
+
+    // Optimistic update — flip all to read and clear badge immediately
+    final updated = current
+        .map((n) => AppNotification(
+              id: n.id,
+              title: n.title,
+              body: n.body,
+              type: n.type,
+              referenceId: n.referenceId,
+              isRead: true,
+              createdAt: n.createdAt,
+            ))
+        .toList();
+    emit(NotificationsLoaded(updated));
+    _badgeCubit.reset();
+
+    final result = await _markAllReadUseCase();
+    if (result is Error) {
+      await loadNotifications();
     }
   }
 }

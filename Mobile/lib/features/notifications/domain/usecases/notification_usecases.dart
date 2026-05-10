@@ -30,3 +30,10 @@ class RegisterDeviceTokenUseCase {
 
   Future<ApiResult<void>> call(String token) => _repository.registerDeviceToken(token);
 }
+
+class MarkAllNotificationsReadUseCase {
+  final NotificationRepository _repository;
+  const MarkAllNotificationsReadUseCase(this._repository);
+
+  Future<ApiResult<void>> call() => _repository.markAllAsRead();
+}
