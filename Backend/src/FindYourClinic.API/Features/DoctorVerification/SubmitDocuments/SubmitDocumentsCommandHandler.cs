@@ -62,6 +62,14 @@ public class SubmitDocumentsCommandHandler : IRequestHandler<SubmitDocumentsComm
             });
         }
 
+        if (doctorProfile.Status == DoctorStatus.Rejected)
+        {
+            doctorProfile.Status = DoctorStatus.PendingReview;
+            doctorProfile.RejectionReason = null;
+            doctorProfile.ReviewedAt = null;
+            doctorProfile.ReviewedByAdminId = null;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ApiResponse<List<UploadedDoctorDocumentDto>>.Ok(uploaded, "Documents uploaded successfully.");
     }

@@ -374,9 +374,10 @@ class _RecordTile extends StatelessWidget {
         HealthRecordType.spO2 => Icons.air_outlined,
         HealthRecordType.labResult => Icons.science_outlined,
         HealthRecordType.bloodTest => Icons.biotech_outlined,
-        HealthRecordType.radiology => Icons.medical_services_outlined,
+        HealthRecordType.radiology => Icons.image_outlined,
         HealthRecordType.vaccination => Icons.vaccines_outlined,
         HealthRecordType.prescription => Icons.medication_outlined,
+        HealthRecordType.allergy => Icons.warning_amber_outlined,
         HealthRecordType.other => Icons.note_alt_outlined,
       };
 
@@ -390,11 +391,11 @@ class _RecordTile extends StatelessWidget {
         HealthRecordType.temperature => AppColors.warning,
         HealthRecordType.weight => AppColors.secondary,
         HealthRecordType.spO2 => const Color(0xFF06B6D4),
-        HealthRecordType.labResult ||
-        HealthRecordType.radiology =>
-          const Color(0xFF8B5CF6),
-        HealthRecordType.vaccination => AppColors.success,
+        HealthRecordType.labResult => const Color(0xFF8B5CF6),
+        HealthRecordType.radiology => Colors.purple,
+        HealthRecordType.vaccination => Colors.teal,
         HealthRecordType.prescription => AppColors.primary,
+        HealthRecordType.allergy => Colors.red,
         HealthRecordType.other => AppColors.textSecondary,
       };
 
@@ -410,6 +411,7 @@ class _RecordTile extends StatelessWidget {
         HealthRecordType.radiology => 'Xray',
         HealthRecordType.vaccination => 'Vacc',
         HealthRecordType.prescription => 'Rx',
+        HealthRecordType.allergy => 'Allergy',
         HealthRecordType.other => 'Other',
       };
 }

@@ -85,6 +85,28 @@ public class UsersController : ControllerBase
 
         return result.Success ? Ok(result) : BadRequest(result);
     }
+
+    [HttpPost("request-deletion")]
+    public async Task<IActionResult> RequestAccountDeletion([FromBody] RequestAccountDeletionRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var parsedUserId))
+            return Unauthorized();
+
+        var command = new FindYourClinic.API.Features.Users.RequestAccountDeletion.RequestAccountDeletionCommand
+        {
+            UserId = parsedUserId,
+            Password = request.Password
+        };
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+}
+
+public class RequestAccountDeletionRequest
+{
+    public string Password { get; set; } = string.Empty;
 }
 
 public class UpdateProfileRequest

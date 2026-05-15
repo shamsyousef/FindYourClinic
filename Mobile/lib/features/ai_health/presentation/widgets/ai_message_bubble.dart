@@ -13,11 +13,15 @@ class AiMessageBubble extends StatelessWidget {
   /// Callback when the speaker icon is tapped (AI messages only).
   final VoidCallback? onSpeakerTap;
 
+  /// TASK 3.2 — Callback for "Find doctors" CTA shown below AI responses.
+  final VoidCallback? onFindDoctors;
+
   const AiMessageBubble({
     super.key,
     required this.message,
     this.isSpeaking = false,
     this.onSpeakerTap,
+    this.onFindDoctors,
   });
 
   @override
@@ -88,7 +92,9 @@ class AiMessageBubble extends StatelessWidget {
                     Text(
                       timeStr,
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : AppColors.textSecondary,
                       ),
                     ),
                     // Speaker button for AI messages
@@ -119,6 +125,26 @@ class AiMessageBubble extends StatelessWidget {
                     ],
                   ],
                 ),
+                // TASK 3.2 — "Find doctors" CTA chip
+                if (isAssistant && onFindDoctors != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: ActionChip(
+                      avatar: const Icon(Icons.search, size: 14),
+                      label: const Text('Find doctors for this →'),
+                      onPressed: onFindDoctors,
+                      visualDensity: VisualDensity.compact,
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.4),
+                      ),
+                      backgroundColor:
+                          AppColors.primary.withValues(alpha: 0.07),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

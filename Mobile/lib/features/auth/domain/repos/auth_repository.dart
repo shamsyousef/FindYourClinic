@@ -38,5 +38,7 @@ abstract class AuthRepository {
 
   Future<ApiResult<DoctorStatusResult>> getDoctorStatus();
 
+  Future<ApiResult<void>> requestAccountDeletion({required String password});
+
   Future<void> logout();
 }

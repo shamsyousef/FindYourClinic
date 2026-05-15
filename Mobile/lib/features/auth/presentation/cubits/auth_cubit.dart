@@ -14,6 +14,7 @@ class AuthCubit extends Cubit<AuthState> {
   final ChangePasswordUseCase _changePasswordUseCase;
   final LogoutUseCase _logoutUseCase;
   final GetDoctorStatusUseCase _getDoctorStatusUseCase;
+  final RequestAccountDeletionUseCase _requestAccountDeletionUseCase;
 
   AuthCubit({
     required LoginUseCase loginUseCase,
@@ -24,6 +25,7 @@ class AuthCubit extends Cubit<AuthState> {
     required ChangePasswordUseCase changePasswordUseCase,
     required LogoutUseCase logoutUseCase,
     required GetDoctorStatusUseCase getDoctorStatusUseCase,
+    required RequestAccountDeletionUseCase requestAccountDeletionUseCase,
   })  : _loginUseCase = loginUseCase,
         _registerUseCase = registerUseCase,
         _googleLoginUseCase = googleLoginUseCase,
@@ -32,6 +34,7 @@ class AuthCubit extends Cubit<AuthState> {
         _changePasswordUseCase = changePasswordUseCase,
         _logoutUseCase = logoutUseCase,
         _getDoctorStatusUseCase = getDoctorStatusUseCase,
+        _requestAccountDeletionUseCase = requestAccountDeletionUseCase,
         super(AuthInitial());
 
   Future<void> login({required String email, required String password}) async {
@@ -130,6 +133,17 @@ class AuthCubit extends Cubit<AuthState> {
     switch (result) {
       case Success(:final data):
         emit(AuthDoctorStatusLoaded(data));
+      case Error(:final failure):
+        emit(AuthError(failure.message));
+    }
+  }
+
+  Future<void> requestAccountDeletion({required String password}) async {
+    emit(AuthLoading());
+    final result = await _requestAccountDeletionUseCase(password: password);
+    switch (result) {
+      case Success():
+        emit(AuthAccountDeletionRequested());
       case Error(:final failure):
         emit(AuthError(failure.message));
     }

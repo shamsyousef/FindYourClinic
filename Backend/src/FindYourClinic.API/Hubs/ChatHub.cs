@@ -75,7 +75,14 @@ public class ChatHub : Hub
             senderName,
             message.Content,
             message.SentAt,
-            message.IsRead);
+            message.IsRead,
+            (int)message.Type,
+            message.MediaUrl,
+            message.MediaThumbnailUrl,
+            message.MediaDurationSeconds,
+            message.ReplyToMessageId,
+            null,
+            new List<ReactionDto>());
 
         await Clients.Group(GetConversationGroup(conversationId)).SendAsync("messageReceived", eventPayload, Context.ConnectionAborted);
         await Clients.User(receiverId.ToString()).SendAsync("conversationUpdated", new ConversationUpdatedDto(conversationId, now), Context.ConnectionAborted);
@@ -132,6 +139,23 @@ public class ChatHub : Hub
 
     private static string GetConversationGroup(Guid conversationId) => $"conversation:{conversationId}";
 
+    // TASK 3.1 — Typing indicator events
+    public async Task StartTyping(Guid conversationId)
+    {
+        var (userId, _) = await GetAuthorizedConversationAsync(conversationId, Context.ConnectionAborted);
+        await Clients
+            .GroupExcept(GetConversationGroup(conversationId), Context.ConnectionId)
+            .SendAsync("userTyping", new TypingDto(conversationId, userId), Context.ConnectionAborted);
+    }
+
+    public async Task StopTyping(Guid conversationId)
+    {
+        var (userId, _) = await GetAuthorizedConversationAsync(conversationId, Context.ConnectionAborted);
+        await Clients
+            .GroupExcept(GetConversationGroup(conversationId), Context.ConnectionId)
+            .SendAsync("userStoppedTyping", new TypingDto(conversationId, userId), Context.ConnectionAborted);
+    }
+
     public sealed record RealtimeMessageDto(
         Guid Id,
         Guid ConversationId,
@@ -139,8 +163,20 @@ public class ChatHub : Hub
         string SenderName,
         string Content,
         DateTime SentAt,
-        bool IsRead);
+        bool IsRead,
+        int Type,
+        string? MediaUrl,
+        string? MediaThumbnailUrl,
+        int? MediaDurationSeconds,
+        Guid? ReplyToMessageId,
+        ReplyPreviewDto? ReplyPreview,
+        List<ReactionDto> Reactions);
+
+    public sealed record ReplyPreviewDto(Guid Id, Guid SenderId, string Content, int Type);
+    public sealed record ReactionDto(Guid UserId, string Emoji);
+    public sealed record ReactionUpdatedDto(Guid ConversationId, Guid MessageId, List<ReactionDto> Reactions);
 
     public sealed record ConversationUpdatedDto(Guid ConversationId, DateTime LastMessageAt);
     public sealed record MessagesReadDto(Guid ConversationId, Guid ReaderId);
+    public sealed record TypingDto(Guid ConversationId, Guid UserId);
 }

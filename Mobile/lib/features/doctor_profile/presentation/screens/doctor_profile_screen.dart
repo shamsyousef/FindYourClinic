@@ -48,7 +48,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen>
       if (!mounted) return;
       // Bare context — gets enriched with doctor data once the profile loads
       // (see _publishContextFromLoaded in build()).
-      context.read<VoiceAssistantCubit>().setScreenContext(
+      sl<VoiceAssistantCubit>().setScreenContext(
             const ScreenContext(screen: PatientScreen.doctorProfile),
             summary: _buildScreenSummary,
           );
@@ -60,7 +60,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen>
   /// next available slot directly from the cubit's screen context.
   void _publishContextFromLoaded(DoctorProfileLoaded loaded) {
     final d = loaded.details;
-    context.read<VoiceAssistantCubit>().setScreenContext(
+    sl<VoiceAssistantCubit>().setScreenContext(
       ScreenContext(
         screen: PatientScreen.doctorProfile,
         data: {
@@ -193,13 +193,13 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen>
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.gradientStart,
-                          AppColors.gradientEnd,
-                        ],
-                      ),
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                AppColors.gradientStart,
+                                AppColors.gradientEnd,
+                              ],
+                            ),
                     ),
                     child: SafeArea(
                       child: Column(

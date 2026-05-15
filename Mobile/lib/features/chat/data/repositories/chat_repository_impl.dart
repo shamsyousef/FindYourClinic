@@ -15,59 +15,166 @@ class ChatRepositoryImpl implements IChatRepository {
   ChatRepositoryImpl(this._remoteDataSource, this._signalRDataSource);
 
   @override
-  Stream<ChatMessage> get onMessageReceived => _signalRDataSource.onMessageReceived;
+  Stream<ChatMessage> get onMessageReceived =>
+      _signalRDataSource.onMessageReceived;
 
   @override
-  Stream<String> get onConversationUpdated => _signalRDataSource.onConversationUpdated;
+  Stream<String> get onConversationUpdated =>
+      _signalRDataSource.onConversationUpdated;
 
   @override
   Stream<String> get onMessagesRead => _signalRDataSource.onMessagesRead;
 
   @override
+  Stream<bool> get onTyping => _signalRDataSource.onTyping;
+
+  @override
+  Stream<ReactionUpdate> get onReactionUpdated =>
+      _signalRDataSource.onReactionUpdated;
+
+  @override
   Future<ApiResult<List<Conversation>>> getConversations() async {
     try {
-      await _signalRDataSource.connect(); // Ensure we connect to listen to updates on the list
+      await _signalRDataSource.connect();
       final result = await _remoteDataSource.getConversations();
       return Success(result);
     } on DioException catch (e) {
       return Error(mapDioException(e));
-    } catch (e) {
+    } catch (_) {
       return const Error(UnknownFailure());
     }
   }
 
   @override
-  Future<ApiResult<List<ChatMessage>>> getMessages(String conversationId) async {
+  Future<ApiResult<List<ChatMessage>>> getMessages(
+      String conversationId) async {
     try {
       final result = await _remoteDataSource.getMessages(conversationId);
       return Success(result);
     } on DioException catch (e) {
       return Error(mapDioException(e));
-    } catch (e) {
+    } catch (_) {
       return const Error(UnknownFailure());
     }
   }
 
   @override
-  Future<ApiResult<Conversation>> startOrGetConversation(String doctorId) async {
+  Future<ApiResult<Conversation>> startOrGetConversation(
+      String doctorId) async {
     try {
-      final result = await _remoteDataSource.startOrGetConversation(doctorId);
+      final result =
+          await _remoteDataSource.startOrGetConversation(doctorId);
       return Success(result);
     } on DioException catch (e) {
       return Error(mapDioException(e));
-    } catch (e) {
+    } catch (_) {
       return const Error(UnknownFailure());
     }
   }
 
   @override
-  Future<ApiResult<ChatMessage>> sendMessage(String conversationId, String content) async {
+  Future<ApiResult<ChatMessage>> sendMessage(
+    String conversationId,
+    String content, {
+    String? replyToMessageId,
+  }) async {
     try {
-      final result = await _remoteDataSource.sendMessage(conversationId, content);
+      final result = await _remoteDataSource.sendMessage(
+        conversationId,
+        content,
+        replyToMessageId: replyToMessageId,
+      );
       return Success(result);
     } on DioException catch (e) {
       return Error(mapDioException(e));
-    } catch (e) {
+    } catch (_) {
+      return const Error(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<ApiResult<ChatMessage>> sendImage(
+    String conversationId,
+    String filePath, {
+    String? caption,
+    String? replyToMessageId,
+  }) async {
+    try {
+      final result = await _remoteDataSource.sendImage(
+        conversationId,
+        filePath,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
+      return Success(result);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (_) {
+      return const Error(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<ApiResult<ChatMessage>> sendVideo(
+    String conversationId,
+    String filePath, {
+    String? caption,
+    String? replyToMessageId,
+  }) async {
+    try {
+      final result = await _remoteDataSource.sendVideo(
+        conversationId,
+        filePath,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
+      return Success(result);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (_) {
+      return const Error(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<ApiResult<ChatMessage>> sendVoice(
+    String conversationId,
+    String filePath, {
+    int? durationSeconds,
+    String? replyToMessageId,
+  }) async {
+    try {
+      final result = await _remoteDataSource.sendVoice(
+        conversationId,
+        filePath,
+        durationSeconds: durationSeconds,
+        replyToMessageId: replyToMessageId,
+      );
+      return Success(result);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (_) {
+      return const Error(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<ApiResult<List<MessageReaction>>> reactToMessage(
+    String messageId,
+    String emoji,
+  ) async {
+    try {
+      final raw = await _remoteDataSource.reactToMessage(messageId, emoji);
+      final reactions = raw
+          .map((m) => MessageReaction(
+                userId: m['userId'] ?? '',
+                emoji: m['emoji'] ?? '',
+              ))
+          .toList(growable: false);
+      return Success(reactions);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (_) {
       return const Error(UnknownFailure());
     }
   }
@@ -79,7 +186,7 @@ class ChatRepositoryImpl implements IChatRepository {
       return const Success(null);
     } on DioException catch (e) {
       return Error(mapDioException(e));
-    } catch (e) {
+    } catch (_) {
       return const Error(UnknownFailure());
     }
   }
@@ -98,5 +205,15 @@ class ChatRepositoryImpl implements IChatRepository {
   @override
   Future<void> disconnect() async {
     await _signalRDataSource.disconnect();
+  }
+
+  @override
+  Future<void> sendTypingStarted(String conversationId) async {
+    await _signalRDataSource.sendTypingStarted(conversationId);
+  }
+
+  @override
+  Future<void> sendTypingStopped(String conversationId) async {
+    await _signalRDataSource.sendTypingStopped(conversationId);
   }
 }

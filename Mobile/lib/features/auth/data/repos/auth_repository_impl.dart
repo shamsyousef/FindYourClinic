@@ -236,6 +236,25 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<ApiResult<void>> requestAccountDeletion({required String password}) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.requestAccountDeletion,
+        data: {'password': password},
+      );
+      final body = response.data as Map<String, dynamic>;
+      if (body['success'] != true) {
+        return Error(ServerFailure(body['message'] as String? ?? 'Failed to request account deletion'));
+      }
+      return const Success(null);
+    } on DioException catch (e) {
+      return Error(mapDioException(e));
+    } catch (e) {
+      return Error(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<void> logout() async {
     await _tokenStorage.clearAll();
   }

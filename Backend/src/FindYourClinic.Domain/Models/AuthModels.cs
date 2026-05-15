@@ -28,3 +28,9 @@ public class CloudinaryUploadResult
     public string Url { get; set; } = string.Empty;
     public string PublicId { get; set; } = string.Empty;
 }
+
+public class CloudinaryVideoUploadResult : CloudinaryUploadResult
+{
+    public string? ThumbnailUrl { get; set; }
+    public int? DurationSeconds { get; set; }
+}

@@ -6,6 +6,10 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../home_highlights/domain/entities/tour_step.dart';
+import '../../../home_highlights/presentation/cubits/home_highlights_cubit.dart';
+import '../../../home_highlights/presentation/widgets/home_highlights_overlay.dart';
 import '../../../notifications/presentation/cubits/notification_badge_cubit.dart';
 import '../../../notifications/presentation/cubits/notification_badge_state.dart';
 import '../cubits/doctor_home_cubit.dart';
@@ -23,20 +27,60 @@ class DoctorHomeScreen extends StatefulWidget {
 }
 
 class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
+  final _headerKey = GlobalKey();
+  final _quickStatsKey = GlobalKey();
+  final _performanceKey = GlobalKey();
+  final _scheduleKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     context.read<DoctorHomeCubit>().loadDashboard();
   }
 
+  List<TourStep> _buildSteps() {
+    return [
+      TourStep(
+        targetKey: _headerKey,
+        title: 'Your Dashboard',
+        description:
+            'See your daily overview, current date, and tap the bell for notifications.',
+        cutoutPadding: EdgeInsets.zero,
+        cutoutRadius: 0,
+      ),
+      TourStep(
+        targetKey: _quickStatsKey,
+        title: 'Quick Stats',
+        description:
+            "Today's appointments at a glance — total, completed, pending and cancelled.",
+      ),
+      TourStep(
+        targetKey: _performanceKey,
+        title: 'Performance & Insights',
+        description:
+            'Track patients, ratings and reviews. Tap "View Insights" for deeper analytics.',
+      ),
+      TourStep(
+        targetKey: _scheduleKey,
+        title: "Today's Schedule",
+        description:
+            'See your upcoming appointments. Tap "Manage" to adjust your availability.',
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<DoctorHomeCubit, DoctorHomeState>(
-        builder: (context, state) => switch (state) {
-          DoctorHomeInitial() || DoctorHomeLoading() => const Center(
-            child: CircularProgressIndicator(),
-          ),
+    return BlocProvider(
+      create: (context) => sl<HomeHighlightsCubit>(),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            BlocBuilder<DoctorHomeCubit, DoctorHomeState>(
+              builder: (context, state) => switch (state) {
+                DoctorHomeInitial() || DoctorHomeLoading() => const Center(
+                  child: CircularProgressIndicator(),
+                ),
           DoctorHomeError(:final message) => ErrorView(
             message: message,
             onRetry: () => context.read<DoctorHomeCubit>().loadDashboard(),
@@ -53,6 +97,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   backgroundColor: AppColors.primary,
                   flexibleSpace: FlexibleSpaceBar(
                     background: Container(
+                      key: _headerKey,
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -152,6 +197,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 // ─── Quick Stats ───
                 SliverToBoxAdapter(
                   child: Padding(
+                    key: _quickStatsKey,
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,41 +269,47 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     ),
                   ),
 
-                // ─── Performance Summary ───
+                // ─── Performance Summary + View Insights ───
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: Container(
+                    key: _performanceKey,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Performance Summary',
-                          style: AppTextStyles.heading3,
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Performance Summary',
+                                style: AppTextStyles.heading3,
+                              ),
+                              const SizedBox(height: 12),
+                              PerformanceCard(
+                                performance: dashboard.performance,
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        PerformanceCard(performance: dashboard.performance),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 24,
+                          ),
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              // Navigate to Insights tab (index 3 in doctor shell)
+                              final shell =
+                                  StatefulNavigationShell.maybeOf(context);
+                              shell?.goBranch(3);
+                            },
+                            icon: const Icon(Icons.insights),
+                            label: const Text(
+                              'View Insights — Check your performance analytics',
+                            ),
+                          ),
+                        ),
                       ],
-                    ),
-                  ),
-                ),
-
-                // ─── View Insights CTA ───
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 24,
-                    ),
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Navigate to Insights tab (index 3 in doctor shell)
-                        final shell = StatefulNavigationShell.maybeOf(context);
-                        shell?.goBranch(3);
-                      },
-                      icon: const Icon(Icons.insights),
-                      label: const Text(
-                        'View Insights — Check your performance analytics',
-                      ),
                     ),
                   ),
                 ),
@@ -265,6 +317,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 // ─── Today's Schedule ───
                 SliverToBoxAdapter(
                   child: Padding(
+                    key: _scheduleKey,
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -321,6 +374,17 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           ),
         },
       ),
-    );
-  }
+      BlocBuilder<DoctorHomeCubit, DoctorHomeState>(
+        builder: (context, state) {
+          if (state is! DoctorHomeLoaded) return const SizedBox.shrink();
+          return Positioned.fill(
+            child: HomeHighlightsOverlay(steps: _buildSteps()),
+          );
+        },
+      ),
+     ],
+    ),
+   ),
+  );
+ }
 }

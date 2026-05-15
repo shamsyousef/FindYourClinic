@@ -71,7 +71,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<ApiResult<void>> registerDeviceToken(String token) async {
     try {
-      await _apiClient.dio.put(
+      await _apiClient.dio.post(
         ApiEndpoints.deviceToken,
         data: {'token': token},
       );

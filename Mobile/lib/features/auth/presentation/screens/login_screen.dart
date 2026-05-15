@@ -273,18 +273,30 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
       case AuthError(:final message):
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        final lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains('rejected')) {
+          String? reason;
+          if (message.contains('Reason:')) {
+            reason = message.split(RegExp(r'Reason:\s*', caseSensitive: false)).last;
+          }
+          context.goNamed(RouteNames.doctorRejected, extra: reason);
+        } else if (lowerMessage.contains('under review') || lowerMessage.contains('pending')) {
+          context.goNamed(RouteNames.doctorPending);
+        } else {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(message),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-            ),
-          );
+            );
+        }
+
       default:
         break;
     }

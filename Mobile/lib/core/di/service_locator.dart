@@ -23,6 +23,9 @@ import '../../features/patient_home/domain/repos/home_repository.dart';
 import '../../features/patient_home/domain/usecases/get_home_summary_usecase.dart';
 import '../../features/patient_home/presentation/cubits/patient_home_cubit.dart';
 
+// Home Highlights
+import '../../features/home_highlights/presentation/cubits/home_highlights_cubit.dart';
+
 // Doctor Home
 import '../../features/doctor_home/data/repos/doctor_dashboard_repository_impl.dart';
 import '../../features/doctor_home/domain/repos/doctor_dashboard_repository.dart';
@@ -150,6 +153,9 @@ Future<void> initServiceLocator() async {
   // ─── Patient Home Feature ───
   _initPatientHome();
 
+  // ─── Home Highlights Feature ───
+  _initHomeHighlights();
+
   // ─── Doctor Home Feature ───
   _initDoctorHome();
 
@@ -209,6 +215,7 @@ void _initAuth() {
   sl.registerFactory(() => ChangePasswordUseCase(sl<AuthRepository>()));
   sl.registerFactory(() => LogoutUseCase(sl<AuthRepository>()));
   sl.registerFactory(() => GetDoctorStatusUseCase(sl<AuthRepository>()));
+  sl.registerFactory(() => RequestAccountDeletionUseCase(sl<AuthRepository>()));
 
   // Cubit
   sl.registerFactory(
@@ -221,6 +228,7 @@ void _initAuth() {
       changePasswordUseCase: sl<ChangePasswordUseCase>(),
       logoutUseCase: sl<LogoutUseCase>(),
       getDoctorStatusUseCase: sl<GetDoctorStatusUseCase>(),
+      requestAccountDeletionUseCase: sl<RequestAccountDeletionUseCase>(),
     ),
   );
 }
@@ -254,6 +262,12 @@ void _initPatientHome() {
   sl.registerFactory(() => GetHomeSummaryUseCase(sl<HomeRepository>()));
   sl.registerFactory(
     () => PatientHomeCubit(getHomeSummaryUseCase: sl<GetHomeSummaryUseCase>()),
+  );
+}
+
+void _initHomeHighlights() {
+  sl.registerFactory(
+    () => HomeHighlightsCubit(tokenStorage: sl<TokenStorage>()),
   );
 }
 
@@ -439,6 +453,10 @@ void _initChat() {
   sl.registerFactory(() => GetMessagesUseCase(sl<IChatRepository>()));
   sl.registerFactory(() => StartConversationUseCase(sl<IChatRepository>()));
   sl.registerFactory(() => SendMessageUseCase(sl<IChatRepository>()));
+  sl.registerFactory(() => SendImageMessageUseCase(sl<IChatRepository>()));
+  sl.registerFactory(() => SendVideoMessageUseCase(sl<IChatRepository>()));
+  sl.registerFactory(() => SendVoiceMessageUseCase(sl<IChatRepository>()));
+  sl.registerFactory(() => ReactToMessageUseCase(sl<IChatRepository>()));
   sl.registerFactory(
     () => MarkConversationAsReadUseCase(sl<IChatRepository>()),
   );
@@ -451,11 +469,16 @@ void _initChat() {
     ),
   );
 
-  sl.registerFactoryParam<ChatCubit, String, dynamic>(
-    (conversationId, _) => ChatCubit(
+  sl.registerFactoryParam<ChatCubit, String, String?>(
+    (conversationId, currentUserId) => ChatCubit(
       conversationId: conversationId,
+      currentUserId: currentUserId,
       getMessagesUseCase: sl<GetMessagesUseCase>(),
       sendMessageUseCase: sl<SendMessageUseCase>(),
+      sendImageMessageUseCase: sl<SendImageMessageUseCase>(),
+      sendVideoMessageUseCase: sl<SendVideoMessageUseCase>(),
+      sendVoiceMessageUseCase: sl<SendVoiceMessageUseCase>(),
+      reactToMessageUseCase: sl<ReactToMessageUseCase>(),
       markConversationAsReadUseCase: sl<MarkConversationAsReadUseCase>(),
       chatRepository: sl<IChatRepository>(),
     ),

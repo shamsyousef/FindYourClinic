@@ -20,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpClient();
+builder.Services.AddHostedService<AccountCleanupBackgroundService>();
 builder.Services.AddScoped<IGeminiService, GeminiService>();
 builder.Services.AddScoped<IPaymobService, PaymobService>();
 builder.Services.AddScoped<PaymobWebhookHandler>();
@@ -140,6 +141,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     await scope.ServiceProvider.SeedAdminAsync(builder.Configuration);
+    await scope.ServiceProvider.SeedDevelopmentDataAsync();
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();

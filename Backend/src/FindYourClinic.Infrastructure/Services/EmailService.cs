@@ -46,6 +46,12 @@ public class EmailService : IEmailService
         return SendEmailAsync(toEmail, "Your Find Your Clinic account has been deactivated", body);
     }
 
+    public Task SendDoctorDeletedEmailAsync(string toEmail, string doctorName, string reason)
+    {
+        var body = $"Hello {doctorName}, your Find Your Clinic account has been deleted by an administrator. Reason: {reason}";
+        return SendEmailAsync(toEmail, "Your Find Your Clinic account has been deleted", body);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false)
     {
         var message = new MimeMessage();

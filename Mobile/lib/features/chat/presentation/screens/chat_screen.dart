@@ -1,83 +1,158 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/token_storage.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../domain/entities/chat_message.dart';
 import '../cubit/chat_cubit.dart';
 import '../cubit/chat_state.dart';
+import '../widgets/chat_bubbles.dart';
+import '../widgets/chat_input_bar.dart';
+import '../widgets/counterparty_info_sheet.dart';
+import '../widgets/reaction_picker.dart';
+import '../widgets/typing_indicator.dart';
 
 class ChatScreen extends StatefulWidget {
   final String conversationId;
+  final String? otherPartyName;
+  final String? otherPartyImageUrl;
+  final String? otherPartyUserId;
 
-  const ChatScreen({super.key, required this.conversationId});
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    this.otherPartyName,
+    this.otherPartyImageUrl,
+    this.otherPartyUserId,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  late final ChatCubit _cubit;
-  final TextEditingController _messageController = TextEditingController();
+  ChatCubit? _cubit;
   final ScrollController _scrollController = ScrollController();
   String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
-    _cubit = sl<ChatCubit>(param1: widget.conversationId)..init();
-    _loadUserId();
+    _loadUserAndInit();
   }
 
-  Future<void> _loadUserId() async {
-    final tokenStorage = sl<TokenStorage>();
-    final userId = await tokenStorage.getUserId();
-    if (mounted) {
-      setState(() {
-        _currentUserId = userId;
-      });
-    }
+  Future<void> _loadUserAndInit() async {
+    final userId = await sl<TokenStorage>().getUserId();
+    if (!mounted) return;
+    setState(() {
+      _currentUserId = userId;
+      _cubit = sl<ChatCubit>(
+        param1: widget.conversationId,
+        param2: userId,
+      )..init();
+    });
   }
 
   @override
   void dispose() {
-    _cubit.close();
-    _messageController.dispose();
+    _cubit?.close();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isNotEmpty) {
-      _cubit.sendMessage(text);
-      _messageController.clear();
-      _scrollToBottom();
-    }
   }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         0.0,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     }
   }
 
+  Future<void> _openCounterpartyInfo() async {
+    final otherId = widget.otherPartyUserId;
+    if (otherId == null) return;
+    HapticFeedback.selectionClick();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CounterpartyInfoSheet(
+        counterpartyUserId: otherId,
+        counterpartyName: widget.otherPartyName ?? 'User',
+        counterpartyImageUrl: widget.otherPartyImageUrl,
+      ),
+    );
+  }
+
+  void _showMessageActions(ChatMessage message) {
+    if (_cubit == null) return;
+    final isMe = message.senderId == _currentUserId;
+    HapticFeedback.lightImpact();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: ReactionPicker(
+              onPick: (emoji) {
+                Navigator.pop(sheetCtx);
+                _cubit!.toggleReaction(message.id, emoji);
+              },
+            ),
+          ),
+          const Divider(height: 1),
+          MessageActionsSheet(
+            canDelete: isMe,
+            onReply: () {
+              Navigator.pop(sheetCtx);
+              _cubit!.setReplyingTo(message);
+            },
+            onCopy: () {
+              Navigator.pop(sheetCtx);
+              if (message.content.isNotEmpty) {
+                Clipboard.setData(ClipboardData(text: message.content));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Copied to clipboard')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor =
+        isDark ? AppColors.darkBackground : AppColors.scaffoldLight;
 
-    if (_currentUserId == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_cubit == null) {
+      return Scaffold(
+        backgroundColor: bgColor,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat'),
+      backgroundColor: bgColor,
+      appBar: _ChatAppBar(
+        name: widget.otherPartyName ?? 'Chat',
+        imageUrl: widget.otherPartyImageUrl,
+        onTap: widget.otherPartyUserId == null ? null : _openCounterpartyInfo,
       ),
       body: Column(
         children: [
@@ -86,168 +161,161 @@ class _ChatScreenState extends State<ChatScreen> {
               bloc: _cubit,
               listener: (context, state) {
                 if (state is ChatLoaded) {
-                  // Wait for the list to build then scroll down
-                  Future.delayed(const Duration(milliseconds: 50), _scrollToBottom);
+                  Future.delayed(
+                      const Duration(milliseconds: 50), _scrollToBottom);
                 }
               },
               builder: (context, state) {
                 if (state is ChatLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (state is ChatError) {
                   return Center(child: Text(state.message));
                 }
-
                 if (state is ChatLoaded) {
-                  final messages = state.messages.reversed.toList(); // For reverse ListView
+                  final messages = state.messages.reversed.toList();
                   return ListView.builder(
                     controller: _scrollController,
                     reverse: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
-                      bool isMe = message.senderId == _currentUserId;
-
-                      return _ChatBubble(
+                      final isMe = message.senderId == _currentUserId;
+                      return ChatBubble(
+                        key: ValueKey(message.id),
                         message: message,
                         isMe: isMe,
+                        onLongPress: message.isPending
+                            ? null
+                            : () => _showMessageActions(message),
+                        onReactTap: message.isPending
+                            ? null
+                            : () => _showMessageActions(message),
                       );
                     },
                   );
                 }
-
                 return const SizedBox.shrink();
               },
             ),
           ),
-          _buildMessageInput(theme),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageInput(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, -2),
-            blurRadius: 8,
+          BlocBuilder<ChatCubit, ChatState>(
+            bloc: _cubit,
+            buildWhen: (prev, curr) =>
+                curr is ChatLoaded &&
+                (prev is! ChatLoaded ||
+                    prev.isOtherPartyTyping != curr.isOtherPartyTyping),
+            builder: (context, state) {
+              if (state is ChatLoaded && state.isOtherPartyTyping) {
+                return const TypingIndicator();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          BlocBuilder<ChatCubit, ChatState>(
+            bloc: _cubit,
+            buildWhen: (prev, curr) =>
+                curr is ChatLoaded &&
+                (prev is! ChatLoaded ||
+                    prev.replyingTo != curr.replyingTo),
+            builder: (context, state) {
+              final replyingTo =
+                  state is ChatLoaded ? state.replyingTo : null;
+              return ChatInputBar(
+                replyingTo: replyingTo,
+                onCancelReply: () => _cubit!.setReplyingTo(null),
+                onSendText: (text) {
+                  _cubit!.sendMessage(text);
+                  _scrollToBottom();
+                },
+                onSendImage: (path) {
+                  _cubit!.sendImage(path);
+                  _scrollToBottom();
+                },
+                onSendVideo: (path) {
+                  _cubit!.sendVideo(path);
+                  _scrollToBottom();
+                },
+                onSendVoice: (path, duration) {
+                  _cubit!.sendVoice(path, durationSeconds: duration);
+                  _scrollToBottom();
+                },
+                onTypingChanged: _cubit!.notifyTyping,
+              );
+            },
           ),
         ],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _sendMessage(),
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: _sendMessage,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.send_rounded,
-                  color: theme.colorScheme.onPrimary,
-                  size: 20,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 }
 
-class _ChatBubble extends StatelessWidget {
-  final ChatMessage message;
-  final bool isMe;
+class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String name;
+  final String? imageUrl;
+  final VoidCallback? onTap;
 
-  const _ChatBubble({required this.message, required this.isMe});
+  const _ChatAppBar({
+    required this.name,
+    this.imageUrl,
+    this.onTap,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final timeFormatter = DateFormat.jm();
-
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
+    return AppBar(
+      titleSpacing: 0,
+      flexibleSpace: const DecoratedBox(
         decoration: BoxDecoration(
-          color: isMe ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.gradientStart,
+              AppColors.primary,
+              AppColors.primaryLight,
+            ],
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              message.content,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isMe ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+      ),
+      foregroundColor: Colors.white,
+      title: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: [
+              UserAvatar(
+                radius: 18,
+                imageUrl: imageUrl,
+                fullName: name,
+                backgroundColor: Colors.white24,
+                textStyle:
+                    const TextStyle(color: Colors.white, fontSize: 14),
               ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  timeFormatter.format(message.sentAt.toLocal()),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: isMe 
-                        ? theme.colorScheme.onPrimary.withOpacity(0.7) 
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontSize: 10,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    message.isRead ? Icons.done_all : Icons.check,
-                    size: 14,
-                    color: message.isRead 
-                        ? Colors.blue[300] // Highlight read receipt
-                        : theme.colorScheme.onPrimary.withOpacity(0.7),
-                  ),
-                ],
-              ],
-            ),
-          ],
+              ),
+              if (onTap != null)
+                const Icon(Icons.info_outline,
+                    color: Colors.white70, size: 20),
+              const SizedBox(width: 8),
+            ],
+          ),
         ),
       ),
     );

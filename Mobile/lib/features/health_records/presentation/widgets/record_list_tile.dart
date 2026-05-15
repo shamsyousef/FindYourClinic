@@ -27,6 +27,7 @@ class RecordListTile extends StatelessWidget {
         HealthRecordType.labResult => Icons.science_outlined,
         HealthRecordType.prescription => Icons.medication_outlined,
         HealthRecordType.vaccination => Icons.vaccines_outlined,
+        HealthRecordType.allergy => Icons.warning_amber_outlined,
         HealthRecordType.other => Icons.note_outlined,
       };
 
@@ -42,6 +43,7 @@ class RecordListTile extends StatelessWidget {
         HealthRecordType.labResult => Colors.indigo,
         HealthRecordType.prescription => Colors.cyan,
         HealthRecordType.vaccination => Colors.lightGreen,
+        HealthRecordType.allergy => Colors.red,
         HealthRecordType.other => Colors.grey,
       };
 

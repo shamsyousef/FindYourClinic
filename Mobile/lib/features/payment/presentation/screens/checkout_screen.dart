@@ -214,7 +214,7 @@ class _CheckoutViewState extends State<_CheckoutView> {
                     decoration: InputDecoration(
                       hintText: 'Wallet phone number (e.g. 01xxxxxxxxx)',
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                      fillColor: isDark ? AppColors.darkSurfaceAlt : Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

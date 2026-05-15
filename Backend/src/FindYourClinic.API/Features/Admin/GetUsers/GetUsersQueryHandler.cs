@@ -18,7 +18,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<P
     public async Task<ApiResponse<PagedUsersDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
         var page = Math.Max(1, request.Page);
-        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+        var pageSize = Math.Clamp(request.PageSize, 1, 1000);
 
         var query = _dbContext.Users
             .AsNoTracking()

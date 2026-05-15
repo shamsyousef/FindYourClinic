@@ -43,55 +43,61 @@ class HealthRecordDetailScreen extends StatelessWidget {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Edit',
-                    onPressed: () async {
-                      await context.pushNamed(
-                        RouteNames.addHealthRecord,
-                        extra: record,
-                      );
-                      if (context.mounted) {
-                        context
-                            .read<HealthRecordCubit>()
-                            .loadRecordDetail(recordId);
-                      }
-                    },
+                  Semantics(
+                    label: 'Edit ${record.title}',
+                    child: IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit',
+                      onPressed: () async {
+                        await context.pushNamed(
+                          RouteNames.addHealthRecord,
+                          extra: record,
+                        );
+                        if (context.mounted) {
+                          context
+                              .read<HealthRecordCubit>()
+                              .loadRecordDetail(recordId);
+                        }
+                      },
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Delete',
-                    color: Colors.red.shade400,
-                    onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Delete record?'),
-                          content: Text(
-                              'Remove "${record.title}" permanently?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: Text(
-                                'Delete',
-                                style:
-                                    TextStyle(color: Colors.red.shade400),
+                  Semantics(
+                    label: 'Delete ${record.title}',
+                    child: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Delete',
+                      color: Colors.red.shade400,
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete record?'),
+                            content: Text(
+                                'Remove "${record.title}" permanently?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed == true && context.mounted) {
-                        await context
-                            .read<HealthRecordCubit>()
-                            .deleteRecord(record.id);
-                        if (context.mounted) context.pop();
-                      }
-                    },
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(
+                                  'Delete',
+                                  style:
+                                      TextStyle(color: Colors.red.shade400),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true && context.mounted) {
+                          await context
+                              .read<HealthRecordCubit>()
+                              .deleteRecord(record.id);
+                          if (context.mounted) context.pop();
+                        }
+                      },
+                    ),
                   ),
                 ],
               );

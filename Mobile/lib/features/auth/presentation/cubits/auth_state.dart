@@ -30,6 +30,8 @@ class AuthPasswordChanged extends AuthState {}
 
 class AuthLoggedOut extends AuthState {}
 
+class AuthAccountDeletionRequested extends AuthState {}
+
 class AuthDoctorStatusLoaded extends AuthState {
   final DoctorStatusResult result;
   AuthDoctorStatusLoaded(this.result);

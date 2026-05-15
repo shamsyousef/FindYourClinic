@@ -6,6 +6,7 @@ class TokenStorage {
   static const _refreshTokenKey = 'refresh_token';
   static const _userRoleKey = 'user_role';
   static const _userIdKey = 'user_id';
+  static const _homeHighlightsSeenKey = 'home_highlights_seen';
 
   final FlutterSecureStorage _storage;
 
@@ -53,4 +54,13 @@ class TokenStorage {
     final token = await getAccessToken();
     return token != null && token.isNotEmpty;
   }
+
+  // ─── Home Highlights ───
+  Future<bool> hasSeenHomeHighlights() async {
+    final seen = await _storage.read(key: _homeHighlightsSeenKey);
+    return seen == 'true';
+  }
+
+  Future<void> setHomeHighlightsSeen() =>
+      _storage.write(key: _homeHighlightsSeenKey, value: 'true');
 }

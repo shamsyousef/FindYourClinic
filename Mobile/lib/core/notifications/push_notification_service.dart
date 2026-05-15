@@ -7,13 +7,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import '../../firebase_options.dart';
 import '../../features/notifications/presentation/cubits/notification_badge_cubit.dart';
+import '../../features/notifications/domain/usecases/notification_usecases.dart';
 import '../di/service_locator.dart';
 import '../routing/app_router.dart';
 
 // Channel id MUST match the value declared in AndroidManifest.xml under
 // `com.google.firebase.messaging.default_notification_channel_id` and the
 // `ChannelId` set by the backend NotificationService when sending FCM messages.
-const String _androidChannelId = 'high_importance_channel';
+const String _androidChannelId = 'high_importance_channel_v2';
 const String _androidChannelName = 'Important Notifications';
 const String _androidChannelDescription =
     'Appointments, messages, and account updates with sound and banner.';
@@ -75,6 +76,15 @@ class PushNotificationService {
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
+
+    // Re-upload the FCM token whenever Firebase rotates it.
+    // Without this, if the token changes (reinstall, app update, etc.)
+    // the backend keeps the stale token and push delivery silently fails.
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      try {
+        await sl<RegisterDeviceTokenUseCase>()(newToken);
+      } catch (_) {}
+    });
 
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
@@ -185,6 +195,7 @@ class PushNotificationService {
             : '/notifications');
 
       case 'appointment_confirmed' ||
+            'appointment_upcoming' ||
             'appointment_cancelled' ||
             'appointment_completed':
         context.push(referenceId != null && referenceId.isNotEmpty

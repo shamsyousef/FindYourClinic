@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
@@ -12,6 +13,9 @@ import '../../../accessibility/presentation/cubits/voice_assistant_visibility_cu
 import '../../../accessibility/presentation/widgets/voice_assistant_card.dart';
 import '../../../notifications/presentation/cubits/notification_badge_cubit.dart';
 import '../../../notifications/presentation/cubits/notification_badge_state.dart';
+import '../../../home_highlights/domain/entities/tour_step.dart';
+import '../../../home_highlights/presentation/cubits/home_highlights_cubit.dart';
+import '../../../home_highlights/presentation/widgets/home_highlights_overlay.dart';
 import '../cubits/patient_home_cubit.dart';
 import '../cubits/patient_home_state.dart';
 import '../widgets/greeting_header.dart';
@@ -29,6 +33,54 @@ class PatientHomeScreen extends StatefulWidget {
 
 class _PatientHomeScreenState extends State<PatientHomeScreen> {
   static const _screenContext = ScreenContext(screen: PatientScreen.home);
+
+  final _headerKey = GlobalKey();
+  final _specialtiesKey = GlobalKey();
+  final _upcomingKey = GlobalKey();
+  final _healthKey = GlobalKey();
+  final _aiToolsKey = GlobalKey();
+  final _topDoctorsKey = GlobalKey();
+
+  List<TourStep> _buildSteps({required bool hasUpcoming}) {
+    return [
+      TourStep(
+        targetKey: _headerKey,
+        title: 'Welcome',
+        description:
+            'Your personalized greeting and notifications live here. Tap the bell anytime.',
+        cutoutPadding: EdgeInsets.zero,
+        cutoutRadius: 0,
+      ),
+      TourStep(
+        targetKey: _specialtiesKey,
+        title: 'Browse by Specialty',
+        description:
+            'Tap a specialty to quickly find the right doctor for your needs.',
+      ),
+      if (hasUpcoming)
+        TourStep(
+          targetKey: _upcomingKey,
+          title: 'Next Appointment',
+          description: 'A quick view of your upcoming visit.',
+        ),
+      TourStep(
+        targetKey: _healthKey,
+        title: 'Health Overview',
+        description: 'Track your key health stats at a glance.',
+      ),
+      TourStep(
+        targetKey: _aiToolsKey,
+        title: 'AI Health Tools',
+        description:
+            'Chat with the AI assistant or check your symptoms anytime.',
+      ),
+      TourStep(
+        targetKey: _topDoctorsKey,
+        title: 'Top Doctors',
+        description: 'Discover highly rated doctors near you.',
+      ),
+    ];
+  }
 
   @override
   void initState() {
@@ -77,12 +129,16 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: BlocBuilder<PatientHomeCubit, PatientHomeState>(
-          builder: (context, state) => switch (state) {
-            PatientHomeInitial() || PatientHomeLoading() => const Center(
-              child: CircularProgressIndicator(),
-            ),
+    return BlocProvider(
+      create: (context) => sl<HomeHighlightsCubit>(),
+      child: Scaffold(
+          body: Stack(
+            children: [
+              BlocBuilder<PatientHomeCubit, PatientHomeState>(
+                builder: (context, state) => switch (state) {
+                  PatientHomeInitial() || PatientHomeLoading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
             PatientHomeError(:final message) => ErrorView(
               message: message,
               onRetry: () => context.read<PatientHomeCubit>().loadDashboard(),
@@ -99,6 +155,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                     backgroundColor: AppColors.primary,
                     flexibleSpace: FlexibleSpaceBar(
                       background: Container(
+                        key: _headerKey,
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
@@ -194,30 +251,41 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
                   // ─── Specialties ───
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                      child: Text('Specialties', style: AppTextStyles.heading3),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 120,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: summary.specialties.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final s = summary.specialties[index];
-                          return SpecialtyChip(
-                            name: s.name,
-                            iconUrl: s.iconUrl,
-                            onTap: () => context.pushNamed(
-                              'search',
-                              queryParameters: {'specialtyId': s.id},
+                    child: Container(
+                      key: _specialtiesKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                            child: Text(
+                              'Specialties',
+                              style: AppTextStyles.heading3,
                             ),
-                          );
-                        },
+                          ),
+                          SizedBox(
+                            height: 120,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: summary.specialties.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                final s = summary.specialties[index];
+                                return SpecialtyChip(
+                                  name: s.name,
+                                  iconUrl: s.iconUrl,
+                                  onTap: () => context.pushNamed(
+                                    'search',
+                                    queryParameters: {'specialtyId': s.id},
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -238,6 +306,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   if (summary.upcomingAppointment != null)
                     SliverToBoxAdapter(
                       child: Padding(
+                        key: _upcomingKey,
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,6 +327,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   // ─── Health Stats ───
                   SliverToBoxAdapter(
                     child: Padding(
+                      key: _healthKey,
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,6 +346,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   // ─── AI Health Tools ───
                   SliverToBoxAdapter(
                     child: Padding(
+                      key: _aiToolsKey,
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,38 +395,50 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
                   // ─── Top Doctors ───
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Container(
+                      key: _topDoctorsKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Top Doctors', style: AppTextStyles.heading3),
-                          TextButton(
-                            onPressed: () => context.pushNamed('search'),
-                            child: const Text('See All'),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Top Doctors',
+                                  style: AppTextStyles.heading3,
+                                ),
+                                TextButton(
+                                  onPressed: () => context.pushNamed('search'),
+                                  child: const Text('See All'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            height: 200,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: summary.topDoctors.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 14),
+                              itemBuilder: (context, index) {
+                                final doctor = summary.topDoctors[index];
+                                return TopDoctorCard(
+                                  doctor: doctor,
+                                  onTap: () => context.pushNamed(
+                                    'doctorDetails',
+                                    pathParameters: {'id': doctor.doctorId},
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 200,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: summary.topDoctors.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 14),
-                        itemBuilder: (context, index) {
-                          final doctor = summary.topDoctors[index];
-                          return TopDoctorCard(
-                            doctor: doctor,
-                            onTap: () => context.pushNamed(
-                              'doctorDetails',
-                              pathParameters: {'id': doctor.doctorId},
-                            ),
-                          );
-                        },
                       ),
                     ),
                   ),
@@ -431,8 +514,23 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             ),
           },
         ),
-      );
-  }
+        BlocBuilder<PatientHomeCubit, PatientHomeState>(
+          builder: (context, state) {
+            if (state is! PatientHomeLoaded) return const SizedBox.shrink();
+            return Positioned.fill(
+              child: HomeHighlightsOverlay(
+                steps: _buildSteps(
+                  hasUpcoming: state.summary.upcomingAppointment != null,
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    ),
+   ),
+  );
+ }
 }
 
 class _AiToolCard extends StatelessWidget {

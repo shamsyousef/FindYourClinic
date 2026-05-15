@@ -63,6 +63,41 @@ public class CloudinaryService : ICloudinaryService
         };
     }
 
+    public async Task<CloudinaryVideoUploadResult> UploadVideoAsync(IFormFile file, string folder)
+    {
+        await using var stream = file.OpenReadStream();
+        var uploadParams = new VideoUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+            Folder = folder
+        };
+
+        var result = await _cloudinary.UploadAsync(uploadParams);
+        if (result.Error is not null)
+        {
+            throw new InvalidOperationException(result.Error.Message);
+        }
+
+        var secureUrl = result.SecureUrl?.ToString() ?? string.Empty;
+        string? thumbnail = null;
+        if (!string.IsNullOrEmpty(result.PublicId))
+        {
+            // Cloudinary generates a JPG thumbnail from the first frame on demand.
+            thumbnail = _cloudinary.Api.UrlImgUp
+                .ResourceType("video")
+                .Format("jpg")
+                .BuildUrl(result.PublicId);
+        }
+
+        return new CloudinaryVideoUploadResult
+        {
+            Url = secureUrl,
+            PublicId = result.PublicId,
+            ThumbnailUrl = thumbnail,
+            DurationSeconds = result.Duration > 0 ? (int)Math.Round(result.Duration) : null
+        };
+    }
+
     public async Task DeleteFileAsync(string publicId)
     {
         var result = await _cloudinary.DestroyAsync(new DeletionParams(publicId));

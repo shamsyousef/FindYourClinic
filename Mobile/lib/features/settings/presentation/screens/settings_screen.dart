@@ -6,6 +6,8 @@ import '../../../../core/theme/theme_mode_cubit.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/token_storage.dart';
 import '../../../accessibility/presentation/cubits/voice_assistant_visibility_cubit.dart';
+import '../../../auth/presentation/cubits/auth_cubit.dart' as import_auth;
+import '../../../auth/presentation/cubits/auth_state.dart' as import_auth;
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -79,6 +81,11 @@ class _SettingsBody extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.pushNamed('changePassword'),
               ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                onTap: () => _showDeleteAccountDialog(context),
+              ),
               const Divider(height: 1),
               _SectionHeader('SUPPORT'),
               ListTile(
@@ -107,6 +114,94 @@ class _SettingsBody extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    final passwordController = TextEditingController();
+    final authCubit = sl<import_auth.AuthCubit>(); // we will use alias to avoid collision
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => BlocProvider.value(
+        value: authCubit,
+        child: BlocConsumer<import_auth.AuthCubit, import_auth.AuthState>(
+          listener: (context, state) {
+            if (state is import_auth.AuthAccountDeletionRequested) {
+              Navigator.of(context).pop(); // close dialog
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion requested successfully. Your account will be permanently deleted in 30 days.'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Log out the user since their account is now inactive
+              authCubit.logout();
+            } else if (state is import_auth.AuthError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is import_auth.AuthLoading;
+            return AlertDialog(
+              title: const Text('Delete Account'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Are you sure you want to delete your account? This action will schedule your account for permanent deletion after 30 days.'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Enter your password to confirm',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          if (passwordController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter your password'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          context.read<import_auth.AuthCubit>().requestAccountDeletion(
+                                password: passwordController.text,
+                              );
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

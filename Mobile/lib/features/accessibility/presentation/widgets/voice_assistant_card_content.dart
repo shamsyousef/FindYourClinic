@@ -13,29 +13,34 @@ class VoiceAssistantCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        _LeadingIcon(state: state),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Voice Assistant',
-                style: AppTextStyles.heading3.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
+    // Exclude semantics if not idle. TTS handles the actual output, 
+    // and STT transcript changes too rapidly for a screen reader.
+    return ExcludeSemantics(
+      excluding: state is! VoiceAssistantIdle,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _LeadingIcon(state: state),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Voice Assistant',
+                  style: AppTextStyles.heading3.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              _StateMessage(state: state),
-            ],
+                const SizedBox(height: 4),
+                _StateMessage(state: state),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -106,13 +111,15 @@ class _LeadingIconState extends State<_LeadingIcon>
     );
 
     if (state is VoiceAssistantListening) {
-      return AnimatedBuilder(
-        animation: _pulseAnimation,
-        builder: (_, child) => Transform.scale(
-          scale: _pulseAnimation.value + extraScale,
-          child: child,
+      return RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _pulseAnimation,
+          builder: (_, child) => Transform.scale(
+            scale: _pulseAnimation.value + extraScale,
+            child: child,
+          ),
+          child: circle,
         ),
-        child: circle,
       );
     }
     return circle;

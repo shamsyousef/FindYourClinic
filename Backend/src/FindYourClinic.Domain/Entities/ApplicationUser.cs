@@ -13,6 +13,7 @@ public class ApplicationUser : AuditableIdentityUser
     public string? FcmToken { get; set; }
     public DateTime? FcmTokenUpdatedAt { get; set; }
     public bool IsActive { get; set; } = true;
+    public DateTime? DeletionRequestedAt { get; set; }
 
     // Extended patient profile fields
     public DateTime? DateOfBirth { get; set; }

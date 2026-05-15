@@ -87,6 +87,9 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletionRequestedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -277,11 +280,28 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("MediaDurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MediaThumbnailUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("MediaUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("ReplyToMessageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("SenderId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -290,6 +310,8 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReplyToMessageId");
 
                     b.HasIndex("SenderId");
 
@@ -674,6 +696,45 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                     b.HasIndex("PatientId", "RecordedAt");
 
                     b.ToTable("HealthRecords");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.MessageReaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("MessageId", "UserId", "Emoji")
+                        .IsUnique();
+
+                    b.ToTable("MessageReactions");
                 });
 
             modelBuilder.Entity("FindYourClinic.Domain.Entities.Notification", b =>
@@ -1146,6 +1207,11 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FindYourClinic.Domain.Entities.ChatMessage", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FindYourClinic.Domain.Entities.ApplicationUser", "Sender")
                         .WithMany("SentMessages")
                         .HasForeignKey("SenderId")
@@ -1153,6 +1219,8 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Conversation");
+
+                    b.Navigation("ReplyToMessage");
 
                     b.Navigation("Sender");
                 });
@@ -1267,6 +1335,25 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.MessageReaction", b =>
+                {
+                    b.HasOne("FindYourClinic.Domain.Entities.ChatMessage", "Message")
+                        .WithMany("Reactions")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FindYourClinic.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FindYourClinic.Domain.Entities.Notification", b =>
@@ -1404,6 +1491,11 @@ namespace FindYourClinic.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FindYourClinic.Domain.Entities.Appointment", b =>
                 {
                     b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("FindYourClinic.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("FindYourClinic.Domain.Entities.Conversation", b =>

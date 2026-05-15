@@ -32,7 +32,12 @@ const _documentLabels = {
 
 class DoctorDocumentUploadScreen extends StatefulWidget {
   final String pendingToken;
-  const DoctorDocumentUploadScreen({super.key, required this.pendingToken});
+  final bool isResubmission;
+  const DoctorDocumentUploadScreen({
+    super.key,
+    required this.pendingToken,
+    this.isResubmission = false,
+  });
 
   @override
   State<DoctorDocumentUploadScreen> createState() =>
@@ -45,12 +50,15 @@ class _DoctorDocumentUploadScreenState
   final Map<String, String> _selectedFiles = {};
   final Map<String, String> _uploadedFiles = {};
 
-  bool get _isProfileUpdateMode => widget.pendingToken.isEmpty;
+  // Profile-update mode: doctor is already approved and editing their docs.
+  // Resubmission mode: doctor was rejected and is re-uploading to retry review.
+  bool get _isProfileUpdateMode =>
+      widget.pendingToken.isEmpty && !widget.isResubmission;
 
   @override
   void initState() {
     super.initState();
-    if (_isProfileUpdateMode) {
+    if (_isProfileUpdateMode || widget.isResubmission) {
       context.read<OnboardingCubit>().loadMyDocuments();
     }
   }
@@ -97,9 +105,11 @@ class _DoctorDocumentUploadScreenState
                   const SizedBox(height: 32),
                   BlocBuilder<OnboardingCubit, OnboardingState>(
                     builder: (context, state) => AppButton(
-                      text: _isProfileUpdateMode
-                          ? 'Update Documents'
-                          : 'Submit Documents',
+                      text: widget.isResubmission
+                          ? 'Resubmit for Review'
+                          : _isProfileUpdateMode
+                              ? 'Update Documents'
+                              : 'Submit Documents',
                       isLoading: state is OnboardingLoading,
                       onPressed: _submit,
                     ),
@@ -282,7 +292,17 @@ class _DoctorDocumentUploadScreenState
         }
         _selectedFiles.clear();
       });
-      if (_isProfileUpdateMode) {
+      if (widget.isResubmission) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Documents resubmitted. Your application is back under review.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        context.goNamed(RouteNames.doctorPending);
+      } else if (_isProfileUpdateMode) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(

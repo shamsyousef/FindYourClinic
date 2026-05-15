@@ -9,6 +9,7 @@ public interface ICloudinaryService
 {
     Task<CloudinaryUploadResult> UploadImageAsync(IFormFile file, string folder);
     Task<CloudinaryUploadResult> UploadFileAsync(IFormFile file, string folder);
+    Task<CloudinaryVideoUploadResult> UploadVideoAsync(IFormFile file, string folder);
     Task DeleteFileAsync(string publicId);
 }
 
@@ -27,6 +28,7 @@ public interface IEmailService
     Task SendDoctorRejectedEmailAsync(string toEmail, string doctorName, string reason);
     Task SendDoctorActivatedEmailAsync(string toEmail, string doctorName);
     Task SendDoctorDeactivatedEmailAsync(string toEmail, string doctorName);
+    Task SendDoctorDeletedEmailAsync(string toEmail, string doctorName, string reason);
 }
 
 public interface IGoogleAuthService

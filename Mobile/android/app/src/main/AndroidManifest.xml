@@ -51,7 +51,7 @@
              or terminated and a notification payload arrives. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="high_importance_channel" />
+            android:value="high_importance_channel_v2" />
 
         <!-- FCM default notification icon. Falls back to launcher icon when
              the FCM payload omits an icon. -->

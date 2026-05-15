@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../cubits/auth_cubit.dart';
 
 class DoctorRejectedScreen extends StatelessWidget {
   final String? rejectionReason;
@@ -13,8 +15,10 @@ class DoctorRejectedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -52,7 +56,7 @@ class DoctorRejectedScreen extends StatelessWidget {
               Text(
                 'Application Rejected',
                 style: AppTextStyles.heading2.copyWith(
-                  color: AppColors.textPrimary,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   fontWeight: FontWeight.w800,
                 ),
                 textAlign: TextAlign.center,
@@ -83,9 +87,10 @@ class DoctorRejectedScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? AppColors.darkSurface : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(
+                        color: isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withAlpha(10),
@@ -100,7 +105,7 @@ class DoctorRejectedScreen extends StatelessWidget {
                       Text(
                         'Rejection Reason:',
                         style: AppTextStyles.label.copyWith(
-                          color: AppColors.textPrimary,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -108,7 +113,7 @@ class DoctorRejectedScreen extends StatelessWidget {
                       Text(
                         rejectionReason!,
                         style: AppTextStyles.bodyMd.copyWith(
-                          color: AppColors.textSecondary,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                           fontStyle: FontStyle.italic,
                           height: 1.5,
                         ),
@@ -124,9 +129,10 @@ class DoctorRejectedScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.darkSurface : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(
+                      color: isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(10),
@@ -141,7 +147,7 @@ class DoctorRejectedScreen extends StatelessWidget {
                     Text(
                       'What to do next:',
                       style: AppTextStyles.label.copyWith(
-                        color: AppColors.textPrimary,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -163,7 +169,7 @@ class DoctorRejectedScreen extends StatelessWidget {
                                     child: Text(
                                       '${e.key + 1}',
                                       style: AppTextStyles.labelSm.copyWith(
-                                        color: AppColors.primary,
+                                        color: isDark ? AppColors.primaryLight : AppColors.primary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -174,7 +180,7 @@ class DoctorRejectedScreen extends StatelessWidget {
                                   child: Text(
                                     e.value,
                                     style: AppTextStyles.bodyMd.copyWith(
-                                      color: AppColors.textSecondary,
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                       height: 1.4,
                                     ),
                                   ),
@@ -194,18 +200,21 @@ class DoctorRejectedScreen extends StatelessWidget {
                 child: AppButton(
                   text: 'Re-upload Documents',
                   icon: Icons.upload_file_rounded,
-                  onPressed: () => context.goNamed(RouteNames.doctorDocuments),
+                  onPressed: () => context.goNamed(
+                    RouteNames.doctorDocuments,
+                    queryParameters: const {'resubmit': 'true'},
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Contact Support
               TextButton(
-                onPressed: () {},
+                onPressed: () => context.pushNamed(RouteNames.helpSupport),
                 child: Text(
                   'Contact Support',
                   style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.textSecondary,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -214,7 +223,10 @@ class DoctorRejectedScreen extends StatelessWidget {
 
               // Back to Login
               TextButton(
-                onPressed: () => context.goNamed(RouteNames.login),
+                onPressed: () async {
+                  await sl<AuthCubit>().logout();
+                  if (context.mounted) context.goNamed(RouteNames.login);
+                },
                 child: Text(
                   'Back to Login',
                   style: AppTextStyles.bodyMd.copyWith(color: AppColors.primary),

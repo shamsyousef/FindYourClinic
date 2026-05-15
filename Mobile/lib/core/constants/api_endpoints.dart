@@ -16,6 +16,7 @@ class ApiEndpoints {
   // ─── Users ───
   static const userProfile = '/api/users/profile';
   static const userProfileImage = '/api/users/profile/image';
+  static const requestAccountDeletion = '/api/users/request-deletion';
 
   // ─── Notifications ───
   static const notifications = '/api/notifications';

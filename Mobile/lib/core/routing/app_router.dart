@@ -83,6 +83,7 @@ import '../../features/payment/presentation/screens/checkout_screen.dart';
 import '../../features/payment/presentation/screens/doctor_earnings_screen.dart';
 import '../../features/payment/presentation/screens/doctor_payment_info_screen.dart';
 import '../../features/payment/presentation/screens/doctor_transaction_history_screen.dart';
+import '../../features/payment/presentation/cubits/doctor_earnings_cubit.dart';
 import '../../features/payment/presentation/screens/patient_payment_methods_screen.dart';
 import '../../features/payment/presentation/screens/patient_transaction_history_screen.dart';
 import '../../features/payment/presentation/screens/receipt_detail_screen.dart';
@@ -173,9 +174,14 @@ class AppRouter {
         name: RouteNames.doctorDocuments,
         builder: (context, state) {
           final token = state.extra as String? ?? '';
+          final isResubmission =
+              state.uri.queryParameters['resubmit'] == 'true';
           return BlocProvider(
             create: (_) => sl<OnboardingCubit>(),
-            child: DoctorDocumentUploadScreen(pendingToken: token),
+            child: DoctorDocumentUploadScreen(
+              pendingToken: token,
+              isResubmission: isResubmission,
+            ),
           );
         },
       ),
@@ -199,8 +205,13 @@ class AppRouter {
         builder: (context, state) {
           final specialtyId = state.uri.queryParameters['specialtyId'];
           final specialtyName = state.uri.queryParameters['specialtyName'];
-          return BlocProvider(
-            create: (_) => sl<SearchCubit>(),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (_) => sl<SearchCubit>()),
+              BlocProvider<VoiceAssistantCubit>.value(
+                value: sl<VoiceAssistantCubit>(),
+              ),
+            ],
             child: SearchScreen(
               initialSpecialtyId: specialtyId,
               initialSpecialtyName: specialtyName,
@@ -216,8 +227,13 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>?;
           final canReview = extra?['canReview'] as bool? ?? false;
           final canMessage = extra?['canMessage'] as bool? ?? false;
-          return BlocProvider(
-            create: (_) => sl<DoctorProfileCubit>(),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (_) => sl<DoctorProfileCubit>()),
+              BlocProvider<VoiceAssistantCubit>.value(
+                value: sl<VoiceAssistantCubit>(),
+              ),
+            ],
             child: DoctorProfileScreen(
               doctorId: doctorId,
               canReview: canReview,
@@ -249,7 +265,13 @@ class AppRouter {
         name: RouteNames.chatDetail,
         builder: (context, state) {
           final conversationId = state.pathParameters['conversationId']!;
-          return ChatScreen(conversationId: conversationId);
+          final extra = state.extra as Map<String, dynamic>?;
+          return ChatScreen(
+            conversationId: conversationId,
+            otherPartyName: extra?['otherPartyName'] as String?,
+            otherPartyImageUrl: extra?['otherPartyImageUrl'] as String?,
+            otherPartyUserId: extra?['otherPartyUserId'] as String?,
+          );
         },
       ),
 
@@ -566,8 +588,15 @@ class AppRouter {
             GoRoute(
               path: '/doctor/insights',
               name: RouteNames.doctorInsights,
-              builder: (context, state) => BlocProvider(
-                create: (_) => sl<InsightsCubit>()..loadInsights(),
+              builder: (context, state) => MultiBlocProvider(
+                providers: [
+                  BlocProvider(
+                    create: (_) => sl<InsightsCubit>()..loadInsights(),
+                  ),
+                  BlocProvider(
+                    create: (_) => sl<DoctorEarningsCubit>()..load(),
+                  ),
+                ],
                 child: const DoctorInsightsScreen(),
               ),
             ),
@@ -610,7 +639,7 @@ class AppRouter {
 
     final authPaths = [
       '/login', '/signup', '/forgot-password', '/otp', '/reset-password',
-      '/doctor-documents', '/doctor-pending', '/onboarding',
+      '/doctor-documents', '/doctor-pending', '/doctor-rejected', '/onboarding',
     ];
     final isOnAuthPage = authPaths.contains(currentPath);
 

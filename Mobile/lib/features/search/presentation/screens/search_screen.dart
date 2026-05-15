@@ -11,7 +11,9 @@ import '../../domain/entities/doctor_search_entities.dart';
 import '../cubits/search_cubit.dart';
 import '../cubits/search_state.dart';
 import '../widgets/doctor_list_tile.dart';
+import '../widgets/doctor_shimmer_card.dart';
 import '../widgets/filter_bottom_sheet.dart';
+
 
 class SearchScreen extends StatefulWidget {
   final String? initialSpecialtyId;
@@ -129,10 +131,26 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         title: const Text('Find a Doctor'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            tooltip: 'Filters',
-            onPressed: () => _showFilters(context),
+          // ─── TASK 1.4: Active filter badge ───
+          BlocBuilder<SearchCubit, SearchState>(
+            builder: (context, state) {
+              final hasActiveFilters = switch (state) {
+                SearchLoaded(:final filters) =>
+                  filters.minRating != null ||
+                  filters.minFee != null ||
+                  filters.maxFee != null ||
+                  filters.specialtyId != null,
+                _ => false,
+              };
+              return Badge(
+                isLabelVisible: hasActiveFilters,
+                child: IconButton(
+                  icon: const Icon(Icons.tune),
+                  tooltip: 'Filters',
+                  onPressed: () => _showFilters(context),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -153,11 +171,39 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
+          // ─── TASK 1.3: Result count label ───
+          BlocBuilder<SearchCubit, SearchState>(
+            buildWhen: (prev, curr) =>
+                curr is SearchLoaded || curr is SearchLoadingMore,
+            builder: (context, state) {
+              final count = switch (state) {
+                SearchLoaded(:final result) => result.totalCount,
+                SearchLoadingMore(:final currentResult) =>
+                  currentResult.totalCount,
+                _ => null,
+              };
+              if (count == null) return const SizedBox.shrink();
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Text(
+                  '$count doctor${count == 1 ? '' : 's'} available',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              );
+            },
+          ),
           Expanded(
             child: BlocBuilder<SearchCubit, SearchState>(
               builder: (context, state) => switch (state) {
-          SearchInitial() || SearchLoading() => const Center(
-              child: CircularProgressIndicator(),
+          // ─── TASK 1.2: Shimmer loading ───
+          SearchInitial() || SearchLoading() => ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: 6,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (_, __) => const DoctorShimmerCard(),
             ),
           SearchError(:final message) => ErrorView(
               message: message,

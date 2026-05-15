@@ -43,6 +43,9 @@ export default function ApprovalsPage() {
   const [drawerUserId, setDrawerUserId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const [deletingDoctorId, setDeletingDoctorId] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+
   const fetchDoctors = async (tab: DoctorStatusFilter) => {
     setIsLoading(true);
     try {
@@ -66,6 +69,32 @@ export default function ApprovalsPage() {
       fetchDoctors(activeTab);
     } catch {
       alert('Failed to approve doctor.');
+    }
+  };
+
+  const handleSetPending = async (id: string) => {
+    try {
+      await api.post(`/admin/doctors/${id}/pending`);
+      fetchDoctors(activeTab);
+    } catch {
+      alert('Failed to set doctor to pending.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!deleteReason) {
+      alert('Please provide a reason for deletion.');
+      return;
+    }
+    try {
+      if (confirm('Are you sure you want to completely delete this account? This cannot be undone.')) {
+        await api.delete(`/admin/doctors/${id}`, { data: { reason: deleteReason } });
+        setDeleteReason('');
+        setDeletingDoctorId(null);
+        fetchDoctors(activeTab);
+      }
+    } catch {
+      alert('Failed to delete doctor.');
     }
   };
 
@@ -218,6 +247,24 @@ export default function ApprovalsPage() {
                   </>
                 )}
 
+                {doctor.status === 'Rejected' && (
+                  <>
+                    <button
+                      onClick={() => handleApprove(doctor.doctorId)}
+                      className="w-full bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 font-medium py-2 px-4 rounded-xl transition-all flex items-center justify-center"
+                    >
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleSetPending(doctor.doctorId)}
+                      className="w-full bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-white border border-yellow-500/20 font-medium py-2 px-4 rounded-xl transition-all flex items-center justify-center mt-2"
+                    >
+                      Set to Pending
+                    </button>
+                  </>
+                )}
+
                 {(doctor.status === 'Approved' || doctor.status === 'Rejected') && (
                   <button
                     onClick={() => handleToggleActive(doctor)}
@@ -232,6 +279,41 @@ export default function ApprovalsPage() {
                     {togglingId === doctor.doctorId ? 'Updating...' : doctor.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                 )}
+
+                {/* Delete Account */}
+                <div className="mt-4 pt-4 border-t border-gray-800">
+                  {deletingDoctorId === doctor.doctorId ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={deleteReason}
+                        onChange={(e) => setDeleteReason(e.target.value)}
+                        placeholder="Reason for deletion..."
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDelete(doctor.doctorId)}
+                          className="flex-1 bg-red-600 text-white font-medium py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                        >
+                          Confirm Delete
+                        </button>
+                        <button
+                          onClick={() => { setDeletingDoctorId(null); setDeleteReason(''); }}
+                          className="flex-1 bg-gray-700 text-white font-medium py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeletingDoctorId(doctor.doctorId)}
+                      className="w-full bg-red-900/20 text-red-500 hover:bg-red-600 hover:text-white border border-red-900/30 font-medium py-2 px-4 rounded-xl transition-all flex items-center justify-center"
+                    >
+                      Delete Account
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

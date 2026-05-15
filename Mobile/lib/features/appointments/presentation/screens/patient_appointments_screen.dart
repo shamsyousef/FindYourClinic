@@ -75,7 +75,9 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: AppColors.textSecondary,
+          unselectedLabelColor: theme.brightness == Brightness.dark
+              ? theme.colorScheme.onSurfaceVariant
+              : AppColors.textSecondary,
           indicatorColor: theme.colorScheme.primary,
           labelStyle: AppTextStyles.label,
           unselectedLabelStyle: AppTextStyles.bodyMd,
@@ -210,7 +212,11 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 72, color: AppColors.textHint),
+            Icon(icon,
+                size: 72,
+                color: theme.brightness == Brightness.dark
+                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                    : AppColors.textHint),
             const SizedBox(height: 20),
             Text(
               title,
@@ -223,7 +229,9 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen>
             Text(
               subtitle,
               style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.textSecondary,
+                color: theme.brightness == Brightness.dark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),

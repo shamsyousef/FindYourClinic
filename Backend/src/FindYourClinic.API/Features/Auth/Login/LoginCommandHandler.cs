@@ -7,6 +7,8 @@ using FindYourClinic.Domain.Models;
 using FindYourClinic.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace FindYourClinic.API.Features.Auth.Login;
 
@@ -34,8 +36,21 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
             return ApiResponse<AuthResponse>.Fail("Invalid email or password.");
         }
 
+        if (user.DeletionRequestedAt.HasValue)
+        {
+            throw new ForbiddenException("Your account is scheduled for deletion. Please contact support to cancel the deletion.");
+        }
+
         if (user.Role == UserRole.Doctor && !user.IsActive)
         {
+            var doctorProfile = await _dbContext.DoctorProfiles
+                .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+
+            if (doctorProfile?.Status == DoctorStatus.Rejected)
+            {
+                throw new ForbiddenException($"Your account has been rejected. Reason: {doctorProfile.RejectionReason ?? "No reason provided."}");
+            }
+
             throw new ForbiddenException("Your account is under review. You will be notified once approved (24-48 hours).");
         }
 

@@ -104,9 +104,38 @@ public class AdminDoctorsController : ControllerBase
 
         return Ok(FindYourClinic.Domain.Common.ApiResponse<object>.Ok(null, "Availability request sent to doctor."));
     }
+
+    [HttpPost("{doctorId:guid}/pending")]
+    public async Task<IActionResult> SetDoctorPending([FromRoute] Guid doctorId)
+    {
+        var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(adminId) || !Guid.TryParse(adminId, out var parsedAdminId))
+            return Unauthorized();
+
+        var command = new SetDoctorPendingCommand { DoctorId = doctorId, AdminId = parsedAdminId };
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [HttpDelete("{doctorId:guid}")]
+    public async Task<IActionResult> DeleteDoctor([FromRoute] Guid doctorId, [FromBody] DeleteDoctorRequest request)
+    {
+        var command = new FindYourClinic.API.Features.Admin.DeleteDoctor.DeleteDoctorCommand 
+        { 
+            DoctorId = doctorId, 
+            Reason = request.Reason 
+        };
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
 }
 
 public class RejectDoctorRequest
+{
+    public string Reason { get; set; } = string.Empty;
+}
+
+public class DeleteDoctorRequest
 {
     public string Reason { get; set; } = string.Empty;
 }

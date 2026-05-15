@@ -72,7 +72,7 @@ public class NotificationService : INotificationService
                     Notification = new AndroidNotification
                     {
                         Sound = "default",
-                        ChannelId = "high_importance_channel"
+                        ChannelId = "high_importance_channel_v2"
                     }
                 },
                 Apns = new ApnsConfig

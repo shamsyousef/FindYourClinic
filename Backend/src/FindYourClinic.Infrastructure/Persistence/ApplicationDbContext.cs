@@ -29,6 +29,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<HealthRecord> HealthRecords => Set<HealthRecord>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<MessageReaction> MessageReactions => Set<MessageReaction>();
     public DbSet<DoctorReview> DoctorReviews => Set<DoctorReview>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
@@ -179,7 +180,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         builder.Entity<ChatMessage>(entity =>
         {
-            entity.Property(x => x.Content).HasMaxLength(3000).IsRequired();
+            entity.Property(x => x.Content).HasMaxLength(3000);
+            entity.Property(x => x.MediaUrl).HasMaxLength(1000);
+            entity.Property(x => x.MediaThumbnailUrl).HasMaxLength(1000);
+            entity.Property(x => x.Type).HasConversion<int>();
             entity.HasOne(x => x.Conversation)
                 .WithMany(x => x.Messages)
                 .HasForeignKey(x => x.ConversationId)
@@ -188,7 +192,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 .WithMany(x => x.SentMessages)
                 .HasForeignKey(x => x.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.ReplyToMessage)
+                .WithMany()
+                .HasForeignKey(x => x.ReplyToMessageId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => new { x.ConversationId, x.SentAt });
+        });
+
+        builder.Entity<MessageReaction>(entity =>
+        {
+            entity.Property(x => x.Emoji).HasMaxLength(16).IsRequired();
+            entity.HasOne(x => x.Message)
+                .WithMany(x => x.Reactions)
+                .HasForeignKey(x => x.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => new { x.MessageId, x.UserId, x.Emoji }).IsUnique();
         });
 
         builder.Entity<DoctorReview>(entity =>

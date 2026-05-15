@@ -83,7 +83,20 @@ class LogoutUseCase {
 
 class GetDoctorStatusUseCase {
   final AuthRepository _repository;
-  const GetDoctorStatusUseCase(this._repository);
 
-  Future<ApiResult<DoctorStatusResult>> call() => _repository.getDoctorStatus();
+  GetDoctorStatusUseCase(this._repository);
+
+  Future<ApiResult<DoctorStatusResult>> call() {
+    return _repository.getDoctorStatus();
+  }
+}
+
+class RequestAccountDeletionUseCase {
+  final AuthRepository _repository;
+
+  RequestAccountDeletionUseCase(this._repository);
+
+  Future<ApiResult<void>> call({required String password}) {
+    return _repository.requestAccountDeletion(password: password);
+  }
 }

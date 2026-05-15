@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/utils/token_storage.dart';
 import '../cubit/conversations_cubit.dart';
 import '../cubit/conversations_state.dart';
 import '../../../../core/widgets/user_avatar.dart';
@@ -17,11 +18,15 @@ class ConversationsScreen extends StatefulWidget {
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
   late final ConversationsCubit _cubit;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _cubit = sl<ConversationsCubit>()..loadConversations();
+    sl<TokenStorage>().getUserId().then((id) {
+      if (mounted) setState(() => _currentUserId = id);
+    });
   }
 
   @override
@@ -142,7 +147,17 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       ],
                     ),
                     onTap: () {
-                      context.push('/chat/${conv.id}').then((_) {
+                      final otherUserId = _currentUserId == conv.patientId
+                          ? conv.doctorId
+                          : conv.patientId;
+                      context.push(
+                        '/chat/${conv.id}',
+                        extra: {
+                          'otherPartyName': conv.counterpartyName,
+                          'otherPartyImageUrl': conv.counterpartyImageUrl,
+                          'otherPartyUserId': otherUserId,
+                        },
+                      ).then((_) {
                         if (mounted) _cubit.loadConversations();
                       });
                     },

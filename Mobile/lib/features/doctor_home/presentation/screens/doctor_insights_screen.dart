@@ -8,6 +8,7 @@ import '../cubits/insights_cubit.dart';
 import '../cubits/insights_state.dart';
 import '../widgets/schedule_item_card.dart';
 import '../widgets/stat_card.dart';
+import '../../../payment/presentation/cubits/doctor_earnings_cubit.dart';
 
 class DoctorInsightsScreen extends StatelessWidget {
   const DoctorInsightsScreen({super.key});
@@ -158,6 +159,50 @@ class DoctorInsightsScreen extends StatelessWidget {
                         color: AppColors.starRating,
                       ),
                     ],
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: BlocBuilder<DoctorEarningsCubit, DoctorEarningsState>(
+                    builder: (context, earningsState) {
+                      if (earningsState is DoctorEarningsLoaded) {
+                        final earnings = earningsState.earnings;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                              child: Text('Financial Overview',
+                                  style: AppTextStyles.heading3),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: StatCard(
+                                      label: 'Available Balance',
+                                      value: '${earnings.pendingBalance.toStringAsFixed(0)} EGP',
+                                      icon: Icons.account_balance_wallet_outlined,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: StatCard(
+                                      label: 'Total Earned',
+                                      value: '${earnings.totalEarnings.toStringAsFixed(0)} EGP',
+                                      icon: Icons.trending_up_outlined,
+                                      color: AppColors.success,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
                   ),
                 ),
                 SliverToBoxAdapter(

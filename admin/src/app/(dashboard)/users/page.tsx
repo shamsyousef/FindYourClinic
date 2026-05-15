@@ -24,7 +24,7 @@ export default function UsersPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get('/admin/users')
+    api.get('/admin/users', { params: { page: 1, pageSize: 1000 } })
       .then((res) => setUsers(res.data.data?.items ?? res.data.data ?? []))
       .catch((err) => console.error('Error fetching users:', err))
       .finally(() => setIsLoading(false));

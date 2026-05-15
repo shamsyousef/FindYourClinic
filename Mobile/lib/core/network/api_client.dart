@@ -1,3 +1,4 @@
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 
@@ -10,12 +11,13 @@ class ApiClient {
   // Use 10.0.2.2 for Android emulator to reach host localhost.
   // Use localhost for iOS simulator.
   static String get _baseUrl {
-    // Bulletproof connection for both Android Emulators and physical devices on the same Wi-Fi.
-    return 'http://192.168.1.32:5106';
+    // Use your PC's IP address for physical device testing.
+    // Ensure your phone is connected to the same Wi-Fi network as your PC.
+    return 'https://fa67-197-63-206-127.ngrok-free.app';
   }
 
   final Dio dio;
-  final TokenStorage _tokenStorage;
+  final TokenStorage _tokenStorage; 
 
   String get baseUrl => _baseUrl;
 

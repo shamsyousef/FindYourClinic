@@ -11,6 +11,7 @@ enum HealthRecordType {
   temperature, // 9
   weight, // 10
   spO2, // 11
+  allergy, // 12
 }
 
 class VitalEntity {

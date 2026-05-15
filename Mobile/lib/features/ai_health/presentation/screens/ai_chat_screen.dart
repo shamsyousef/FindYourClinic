@@ -223,6 +223,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
                                     ? () => _onSpeakerTap(msg.content,
                                         msg.createdAt.toIso8601String())
                                     : null,
+                                // TASK 3.2 — Find doctors CTA
+                                onFindDoctors: msg.role == 'assistant'
+                                    ? () => context.pushNamed('search')
+                                    : null,
                               )),
                           if (isSending) _buildTypingIndicator(isDark),
                         ],

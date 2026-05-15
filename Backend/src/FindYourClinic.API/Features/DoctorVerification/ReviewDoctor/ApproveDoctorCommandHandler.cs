@@ -37,9 +37,9 @@ public class ApproveDoctorCommandHandler : IRequestHandler<ApproveDoctorCommand,
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId, cancellationToken)
             ?? throw new NotFoundException("Doctor not found.");
 
-        if (doctorProfile.Status != DoctorStatus.PendingReview)
+        if (doctorProfile.Status != DoctorStatus.PendingReview && doctorProfile.Status != DoctorStatus.Rejected)
         {
-            throw new BadRequestException("Only pending doctors can be approved.");
+            throw new BadRequestException("Only pending or rejected doctors can be approved.");
         }
 
         doctorProfile.Status = DoctorStatus.Approved;

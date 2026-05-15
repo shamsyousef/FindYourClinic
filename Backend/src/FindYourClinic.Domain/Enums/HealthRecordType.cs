@@ -13,5 +13,6 @@ public enum HealthRecordType
     BloodSugar = 8,
     Temperature = 9,
     Weight = 10,
-    SpO2 = 11
+    SpO2 = 11,
+    Allergy = 12,
 }

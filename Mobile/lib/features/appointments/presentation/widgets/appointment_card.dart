@@ -214,7 +214,11 @@ class AppointmentCard extends StatelessWidget {
   Widget _infoRow(IconData icon, String text, ThemeData theme) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
+        Icon(icon,
+            size: 16,
+            color: theme.brightness == Brightness.dark
+                ? theme.colorScheme.onSurfaceVariant
+                : AppColors.textSecondary),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
