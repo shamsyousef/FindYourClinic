@@ -1,206 +1,306 @@
 # Find Your Clinic
 
-Find Your Clinic is a full healthcare platform with:
+> A full-stack healthcare platform connecting patients with doctors — featuring real-time chat, AI health analysis, appointment booking, and a complete admin back-office.
+>
+> Built with **Flutter** (mobile), **.NET 10** (backend), and **Next.js 14** (admin) — covering the full journey from patient sign-up and doctor onboarding through to appointments, payments, and operational oversight.
 
-- A Flutter mobile app for patients and doctors.
-- A .NET backend API with real-time chat and domain modules.
-- A Next.js admin dashboard for operations and moderation.
+---
 
-This document is the main technical guide for understanding, running, and maintaining the project.
+## Platform Overview
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| 📱 **Mobile** | Flutter 3.11 · Dart | Patient & doctor apps (iOS + Android) |
+| 🖥 **Backend** | .NET 10 · ASP.NET Core | REST API, real-time hub, business logic |
+| 🛠 **Admin** | Next.js 14 · TypeScript | Operations dashboard for admins |
+| 🗄 **Database** | SQL Server + EF Core | Persistence and migrations |
+
+---
+
+## Table of Contents
+
+1. [Repository Structure](#1-repository-structure)
+2. [Architecture](#2-architecture)
+3. [Features](#3-features)
+4. [Backend API Reference](#4-backend-api-reference)
+5. [Prerequisites](#5-prerequisites)
+6. [Configuration](#6-configuration)
+7. [Local Development Setup](#7-local-development-setup)
+8. [Testing](#8-testing)
+9. [Runtime Notes](#9-runtime-notes)
+10. [Key Paths for Contributors](#10-key-paths-for-contributors)
+11. [Troubleshooting](#11-troubleshooting)
+12. [Roadmap](#12-roadmap)
+
+---
 
 ## 1) Repository Structure
 
 ```text
 Find-Your-Clinic/
-+-- Mobile/                         # Flutter app (patients + doctors)
-+-- Backend/                        # .NET API + Domain + Infrastructure
-|   +-- src/FindYourClinic.API
-|   +-- src/FindYourClinic.Domain
-|   +-- src/FindYourClinic.Infrastructure
-+-- admin/                          # Next.js admin dashboard
-+-- docs/                           # Specs and implementation plans
-+-- Figma/                          # UI reference exports
+├── Mobile/                         # Flutter app (patients + doctors)
+│   ├── lib/
+│   │   ├── core/                   # DI, routing, network, theme, utils
+│   │   └── features/               # One folder per product feature
+│   └── test/
+├── Backend/
+│   └── src/
+│       ├── FindYourClinic.API/      # Controllers, MediatR handlers, middleware
+│       ├── FindYourClinic.Domain/   # Entities, interfaces, enums (pure C#)
+│       └── FindYourClinic.Infrastructure/  # EF Core, Identity, external services
+├── admin/                          # Next.js admin dashboard
+│   └── src/
+│       ├── app/                    # Next.js App Router pages
+│       ├── components/             # Shared UI components
+│       └── lib/                    # API client and utilities
+├── docs/                           # Specs and implementation plans
+└── Figma/                          # UI reference exports
 ```
 
-## 2) High-Level Architecture
+---
+
+## 2) Architecture
 
 ### Mobile (Flutter)
 
-- Pattern: `presentation -> domain -> data`
-- State management: `flutter_bloc` (Cubit/Bloc)
-- DI: `get_it` via `Mobile/lib/core/di/service_locator.dart`
-- Routing: `go_router`
-- Networking: `dio` with JWT refresh interceptor
+Follows a strict **presentation → domain → data** layered architecture per feature.
 
-Feature folders follow:
-
-```text
+```
 features/{feature_name}/
-+-- data/
-+-- domain/
-+-- presentation/
+├── data/          # Repositories (impl), DTOs, remote data sources
+├── domain/        # Use cases, repository interfaces, entities
+└── presentation/  # Cubits, pages, widgets
 ```
 
-### Backend (.NET)
+| Concern | Solution |
+|---|---|
+| State management | `flutter_bloc` — Cubit/Bloc only |
+| Dependency injection | `get_it` — registered in `core/di/service_locator.dart` |
+| Routing | `go_router` |
+| Networking | `dio` with JWT access/refresh interceptor |
+| Real-time chat | `signalr_netcore` → `/hubs/chat` |
+| Push notifications | Firebase Cloud Messaging + `flutter_local_notifications` |
+| Maps | `flutter_map` + `geolocator` |
+| Secure storage | `flutter_secure_storage` |
+| Media (chat) | `record`, `just_audio`, `video_player` |
+| Payments | `webview_flutter` (Paymob iframe) |
+| Accessibility / TTS | `speech_to_text`, `flutter_tts` |
 
-- Projects:
-  - `FindYourClinic.API` (controllers, feature handlers, API composition)
-  - `FindYourClinic.Domain` (entities, interfaces, enums)
-  - `FindYourClinic.Infrastructure` (EF Core, auth, external services)
-- Architectural style:
-  - MediatR request/handler per feature
-  - FluentValidation pipeline
-  - Entity Framework Core + SQL Server
-  - ASP.NET Identity + JWT
+**19 product features:**
+`auth` · `patient_home` · `doctor_home` · `search` · `appointments` · `chat` · `health_records` · `ai_health` · `notifications` · `payment` · `doctor_onboarding` · `doctor_availability` · `doctor_profile` · `patient_profile` · `nearby_clinics` · `home_highlights` · `settings` · `help_support` · `accessibility`
 
-### Admin (Next.js)
+---
 
-- Next.js 14 + React 18 + TypeScript + Tailwind
-- Axios client with token injection
-- Admin-specific pages: dashboard, approvals, users, specialties, reviews, financial
+### Backend (.NET 10)
 
-## 3) Main Product Capabilities
+| Concern | Solution |
+|---|---|
+| Request pipeline | MediatR — one request/handler pair per feature |
+| Validation | FluentValidation pipeline behavior |
+| Auth | ASP.NET Identity + JWT (access + refresh tokens) |
+| ORM | Entity Framework Core — code-first migrations |
+| Real-time | ASP.NET Core SignalR (`/hubs/chat`) |
+| Rate limiting | Built-in `RateLimiter` — scoped to auth and AI routes |
+| Error handling | Global exception middleware |
+| Background work | `IHostedService` — appointment reminders, auto-completion |
+| File storage | Cloudinary |
+| Push notifications | Firebase Admin SDK |
+| AI | Gemini API |
+| Payments | Paymob |
 
-### Patient app
+**Project layers:**
 
-- Authentication (email/password + Google)
-- Doctor search and profile viewing
-- Appointment booking, viewing, canceling
-- Health records CRUD and summary
-- In-app chat with doctors (SignalR-backed)
-- Notifications (FCM + in-app)
-- AI health chat and symptom analysis
-- Payments and receipts
+```
+FindYourClinic.API          ← composition root, controllers, hubs, middleware
+FindYourClinic.Domain       ← pure C#: entities, interfaces, enums, value objects
+FindYourClinic.Infrastructure  ← EF Core, Identity, Cloudinary, FCM, Gemini, Paymob
+```
 
-### Doctor app
+---
 
-- Doctor onboarding and document upload
-- Availability management
-- Appointment management (confirm/complete)
-- Chat with patients
-- Doctor dashboard and insights
+### Admin Dashboard (Next.js 14)
+
+| Concern | Solution |
+|---|---|
+| Framework | Next.js 14 App Router + React 18 |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| HTTP client | Axios with JWT injection |
+
+**Admin pages:** `dashboard` · `approvals` · `users` · `specialties` · `reviews` · `financial` · `health-records`
+
+---
+
+## 3) Features
+
+### Patient App
+
+- Email/password and Google OAuth sign-in
+- Doctor discovery — search by specialty, name, rating, location
+- Nearby clinics map view
+- Appointment booking, viewing, and cancellation
+- Health records CRUD with summaries
+- Real-time chat with doctors (text, audio, video)
+- In-app and push notifications (FCM)
+- AI health chat and symptom analysis (Gemini-powered)
+- Payments via Paymob with receipt history
+- Accessibility: voice input (speech-to-text) and TTS read-back
+
+### Doctor App
+
+- Guided onboarding with document/credential upload
+- Availability slot management
+- Appointment management — confirm and complete
+- Real-time chat with patients
+- Earnings dashboard and transaction history
 - Profile and payment info management
-- Earnings and transaction history
 
-### Admin dashboard
+### Admin Dashboard
 
-- Login restricted to Admin role
-- Doctor approval/rejection workflow
-- User/doctor activation toggles
+- Login restricted to the `Admin` role
+- Doctor approval / rejection workflow with notes
+- User and doctor activation toggles
 - Specialty CRUD
-- Review moderation
-- Financial overview, transactions, and doctor payouts
+- Review moderation (view and delete)
+- Financial overview — transactions and doctor payouts
 
-## 4) Backend API Modules (Controller Groups)
+---
 
-- `api/auth`
-- `api/users`
-- `api/doctors`
-- `api/doctors/availability`
-- `api/appointments`
-- `api/messages`
-- `api/notifications`
-- `api/health-records`
-- `api/reviews`
-- `api/specialties`
-- `api/ai`
-- `api/payments`
-- `api/admin/users`
-- `api/admin/doctors`
-- `api/admin/reviews`
-- `api/admin/financial`
+## 4) Backend API Reference
 
-Swagger is enabled by default:
+All endpoints are prefixed with `/api/`. Swagger UI is available at:
 
-- `http://localhost:5106/swagger`
-- or `http://<host-ip>:5106/swagger`
+```
+http://localhost:5106/swagger
+http://<host-ip>:5106/swagger
+```
+
+| Group | Base route |
+|---|---|
+| Auth | `/api/auth` |
+| Users | `/api/users` |
+| Doctors | `/api/doctors` |
+| Doctor availability | `/api/doctors/availability` |
+| Appointments | `/api/appointments` |
+| Chat messages | `/api/messages` |
+| Notifications | `/api/notifications` |
+| Health records | `/api/health-records` |
+| Reviews | `/api/reviews` |
+| Specialties | `/api/specialties` |
+| AI health | `/api/ai` |
+| Payments | `/api/payments` |
+| Admin — users | `/api/admin/users` |
+| Admin — doctors | `/api/admin/doctors` |
+| Admin — reviews | `/api/admin/reviews` |
+| Admin — financial | `/api/admin/financial` |
+| SignalR hub | `/hubs/chat` |
+
+> **JWT via query string for the hub:** clients may pass `?access_token=<token>` when establishing the SignalR connection.
+
+---
 
 ## 5) Prerequisites
 
-### Required tooling
+### Tooling
 
-- Flutter SDK compatible with Dart `3.11.x` (`Mobile/pubspec.yaml`)
-- .NET SDK supporting `net10.0` (`Backend/src/*/*.csproj`)
-- SQL Server (local or remote)
-- Node.js 18+ and npm
+| Tool | Required version |
+|---|---|
+| Flutter SDK | compatible with Dart `^3.11.4` |
+| .NET SDK | `net10.0` |
+| SQL Server | 2019+ (local or remote) |
+| Node.js | 18+ |
+| npm | bundled with Node 18+ |
+| `dotnet-ef` CLI | `dotnet tool install -g dotnet-ef` |
 
-### External services used
+### External Services
 
-- Firebase Cloud Messaging
-- Cloudinary
-- Google OAuth
-- SMTP provider (email)
-- Gemini API
-- Paymob
+| Service | Used for |
+|---|---|
+| Firebase | Push notifications (FCM) + Google OAuth |
+| Cloudinary | Doctor document and avatar uploads |
+| Google OAuth | Social login |
+| SMTP provider | Email verification and notifications |
+| Gemini API | AI health chat and symptom analysis |
+| Paymob | In-app payment processing |
+
+---
 
 ## 6) Configuration
 
-### 6.1 Backend configuration files
+### 6.1 Backend — `appsettings.json` sections
 
-- `Backend/src/FindYourClinic.API/appsettings.json`
-- `Backend/src/FindYourClinic.API/appsettings.Development.json`
-
-Important sections:
-
-- `ConnectionStrings:DefaultConnection`
-- `JwtSettings`
-- `Firebase`
-- `Cloudinary`
-- `Google`
-- `Email`
-- `Gemini`
-- `Paymob`
-- `AdminSeed`
-
-### Security note (important)
-
-Sensitive credentials appear in committed backend config files. Move all secrets to environment variables or user-secrets and rotate compromised credentials immediately.
-
-Recommended:
-
-```bash
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "JwtSettings:SecretKey" "..."
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "ConnectionStrings:DefaultConnection" "..."
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "Cloudinary:ApiSecret" "..."
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "Google:ClientSecret" "..."
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "Email:Password" "..."
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "Paymob:ApiKey" "..."
-dotnet user-secrets --project Backend/src/FindYourClinic.API set "Gemini:ApiKey" "..."
+```
+Backend/src/FindYourClinic.API/
+├── appsettings.json
+└── appsettings.Development.json
 ```
 
-### 6.2 Mobile base URL
+| Section | Key settings |
+|---|---|
+| `ConnectionStrings` | `DefaultConnection` |
+| `JwtSettings` | `SecretKey`, `Issuer`, `Audience`, expiry durations |
+| `Firebase` | service-account credentials |
+| `Cloudinary` | `CloudName`, `ApiKey`, `ApiSecret` |
+| `Google` | `ClientId`, `ClientSecret` |
+| `Email` | `Host`, `Port`, `Username`, `Password` |
+| `Gemini` | `ApiKey` |
+| `Paymob` | `ApiKey`, `IntegrationId`, `IframeId` |
+| `AdminSeed` | initial admin email/password |
 
-Mobile API base URL is currently hardcoded in:
+> **⚠ Security — action required**
+>
+> Sensitive credentials are currently in committed config files. Before going to production, migrate every secret to environment variables or `dotnet user-secrets` and **rotate any exposed keys immediately**.
 
-- `Mobile/lib/core/network/api_client.dart`
+```bash
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "JwtSettings:SecretKey"              "..."
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "ConnectionStrings:DefaultConnection" "..."
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "Cloudinary:ApiSecret"               "..."
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "Google:ClientSecret"                "..."
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "Email:Password"                     "..."
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "Paymob:ApiKey"                      "..."
+dotnet user-secrets --project Backend/src/FindYourClinic.API set "Gemini:ApiKey"                      "..."
+```
 
-Update it to your backend host before running on device/emulator.
+### 6.2 Mobile — API base URL
 
-### 6.3 Admin base URL
+Hardcoded in [`Mobile/lib/core/network/api_client.dart`](Mobile/lib/core/network/api_client.dart).  
+Update the base URL to your running backend host before launching on a device or emulator.
 
-Admin API base URL is currently hardcoded in:
+### 6.3 Admin — API base URL
 
-- `admin/src/lib/api.ts`
+Hardcoded in [`admin/src/lib/api.ts`](admin/src/lib/api.ts).  
+Set it to the same backend host.
 
-Set it to the same running backend API host.
+> **Recommended:** Move both base URLs to `.env` / `.env.local` files and reference them via environment variables — eliminates the need to touch source code per environment.
+
+---
 
 ## 7) Local Development Setup
 
-### 7.1 Run backend
+### 7.1 Backend
 
 ```bash
 cd Backend
+
+# Restore and build
 dotnet restore
 dotnet build
-dotnet ef database update --project src/FindYourClinic.Infrastructure --startup-project src/FindYourClinic.API
+
+# Apply EF Core migrations
+dotnet ef database update \
+  --project src/FindYourClinic.Infrastructure \
+  --startup-project src/FindYourClinic.API
+
+# Run
 dotnet run --project src/FindYourClinic.API
 ```
 
-Default HTTP URL from launch settings:
+Default listener: **`http://0.0.0.0:5106`**  
+Swagger: **`http://localhost:5106/swagger`**
 
-- `http://0.0.0.0:5106`
+---
 
-### 7.2 Run admin dashboard
+### 7.2 Admin Dashboard
 
 ```bash
 cd admin
@@ -208,11 +308,11 @@ npm install
 npm run dev
 ```
 
-Default URL:
+Default URL: **`http://localhost:3000`**
 
-- `http://localhost:3000`
+---
 
-### 7.3 Run mobile app
+### 7.3 Mobile App
 
 ```bash
 cd Mobile
@@ -220,65 +320,93 @@ flutter pub get
 flutter run
 ```
 
-If using Android emulator, ensure API host is reachable from emulator/device.
+> **Emulator tip:** Android emulators reach the host machine at `10.0.2.2`. If your backend listens on `localhost:5106`, set the base URL to `http://10.0.2.2:5106` inside `api_client.dart` when running on an emulator.
 
-## 8) Testing and Quality
+---
 
-### Mobile tests
+## 8) Testing
 
-Exists under:
+### Mobile
 
-- `Mobile/test/...`
-
-Run:
+Tests live under `Mobile/test/`.
 
 ```bash
 cd Mobile
 flutter test
 ```
 
-### Backend tests
+### Backend
 
-No dedicated backend test project is currently present under `Backend/tests` (gap to address).
+No dedicated test project exists yet under `Backend/tests/` — this is an open gap. The recommended approach when adding tests:
 
-### Admin tests
+- **Unit tests** for domain use-case logic
+- **Integration tests** using `WebApplicationFactory<Program>` + an in-memory or containerised SQL Server
 
-No automated test suite is currently configured (gap to address).
+### Admin
 
-## 9) Runtime and Infrastructure Notes
+No automated test suite is configured yet. Recommended starting point: Vitest + React Testing Library for component tests and mocked API handlers.
 
-- Chat hub endpoint: `/hubs/chat`
-- JWT is also accepted via query string for hub connections (`access_token`)
-- Rate limiting policies are configured for auth and AI routes
-- Global exception middleware is enabled
-- Background hosted services handle appointment reminders and auto-completion
+---
+
+## 9) Runtime Notes
+
+| Topic | Detail |
+|---|---|
+| SignalR hub | `/hubs/chat` — JWT accepted via `?access_token=<token>` query param |
+| Rate limiting | Applied to `/api/auth/*` and `/api/ai/*` routes |
+| Global error handling | Middleware converts unhandled exceptions to RFC 7807 problem details |
+| Background services | Appointment reminders (T-24 h, T-1 h) and auto-completion of past appointments |
+| CORS | Configured in `Program.cs` — update allowed origins before deploying |
+
+---
 
 ## 10) Key Paths for Contributors
 
-- Mobile app entry: `Mobile/lib/main.dart`
-- Mobile router: `Mobile/lib/core/routing/app_router.dart`
-- Mobile DI: `Mobile/lib/core/di/service_locator.dart`
-- Backend entry: `Backend/src/FindYourClinic.API/Program.cs`
-- Backend DbContext: `Backend/src/FindYourClinic.Infrastructure/Persistence/ApplicationDbContext.cs`
-- Admin API client: `admin/src/lib/api.ts`
+| Path | Purpose |
+|---|---|
+| [`Mobile/lib/main.dart`](Mobile/lib/main.dart) | Mobile entry point |
+| [`Mobile/lib/core/routing/app_router.dart`](Mobile/lib/core/routing/app_router.dart) | All app routes (go_router) |
+| [`Mobile/lib/core/di/service_locator.dart`](Mobile/lib/core/di/service_locator.dart) | get_it registrations |
+| [`Mobile/lib/core/network/api_client.dart`](Mobile/lib/core/network/api_client.dart) | Dio client + interceptors |
+| [`Backend/src/FindYourClinic.API/Program.cs`](Backend/src/FindYourClinic.API/Program.cs) | Backend composition root |
+| [`Backend/src/FindYourClinic.Infrastructure/Persistence/ApplicationDbContext.cs`](Backend/src/FindYourClinic.Infrastructure/Persistence/ApplicationDbContext.cs) | EF Core DbContext |
+| [`Backend/src/FindYourClinic.API/Hubs/`](Backend/src/FindYourClinic.API/Hubs/) | SignalR chat hub |
+| [`Backend/src/FindYourClinic.API/Middleware/`](Backend/src/FindYourClinic.API/Middleware/) | Global exception handler |
+| [`admin/src/lib/api.ts`](admin/src/lib/api.ts) | Admin Axios client |
+| [`admin/src/app/(dashboard)/page.tsx`](admin/src/app/(dashboard)/page.tsx) | Admin dashboard home |
 
-## 11) Common Troubleshooting
+---
 
-- `401 Unauthorized` in admin:
-  - Re-login and ensure backend is reachable.
-  - Confirm user role is `Admin`.
-- Mobile cannot call API:
-  - Verify `api_client.dart` host points to reachable backend IP.
-  - Confirm backend is listening on `5106`.
-- Database/migration errors:
-  - Verify connection string and SQL Server availability.
-  - Re-run `dotnet ef database update`.
-- Notifications not received:
-  - Verify Firebase credentials and token registration API.
+## 11) Troubleshooting
 
-## 12) Suggested Next Improvements
+**`401 Unauthorized` in admin**
+- Re-login and verify the backend is reachable from the browser.
+- Confirm the authenticated user has the `Admin` role in the database.
 
-- Move all runtime config to environment-driven settings.
-- Add backend test project (unit + integration).
-- Add admin test coverage (component + API mocks).
-- Replace hardcoded frontend API hosts with env variables.
+**Mobile cannot reach the API**
+- Check `api_client.dart` base URL — use `10.0.2.2` for Android emulators, not `localhost`.
+- Confirm the backend process is running and listening on port `5106`.
+- Ensure no firewall is blocking the port.
+
+**Database / migration errors**
+- Verify `ConnectionStrings:DefaultConnection` is correct and SQL Server is running.
+- Re-run `dotnet ef database update` after pulling new migrations.
+
+**Push notifications not received**
+- Check Firebase service-account credentials in `appsettings.json`.
+- Confirm device FCM token registration is hitting `/api/notifications` successfully.
+
+**SignalR connection fails**
+- Ensure the JWT is passed via `Authorization` header or `?access_token=` query param.
+- Check CORS — the hub endpoint must allow the client origin.
+
+---
+
+## 12) Roadmap
+
+- [ ] Migrate all runtime secrets to environment variables 
+- [ ] Add backend test project — unit tests for domain use cases + integration tests for API endpoints
+- [ ] Add admin test coverage — Vitest + React Testing Library
+- [ ] Replace hardcoded frontend API base URLs with `.env` / `.env.local`
+- [ ] CI/CD pipeline — GitHub Actions: lint → test → build for all three platforms
+
