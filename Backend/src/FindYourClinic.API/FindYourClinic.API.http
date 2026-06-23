@@ -1,6 +1,0 @@
-@FindYourClinic.API_HostAddress = http://localhost:5106
-
-GET {{FindYourClinic.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
