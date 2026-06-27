@@ -28,7 +28,7 @@ public class GetMyStatusQueryHandler : IRequestHandler<GetMyStatusQuery, ApiResp
                 DocumentCount = p.Documents.Count
             })
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         return ApiResponse<DoctorStatusDto>.Ok(new DoctorStatusDto
         {

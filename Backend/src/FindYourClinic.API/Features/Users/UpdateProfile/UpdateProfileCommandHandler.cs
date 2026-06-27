@@ -1,12 +1,12 @@
-using Ardalis.Result;
 using FindYourClinic.API.Features.Users.GetProfile;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
 namespace FindYourClinic.API.Features.Users.UpdateProfile;
 
-public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand, Result<UserProfileDto>>
+public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand, ApiResponse<UserProfileDto>>
 {
     private readonly UserManager<Domain.Entities.ApplicationUser> _userManager;
 
@@ -15,10 +15,10 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         _userManager = userManager;
     }
 
-    public async Task<Result<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId.ToString())
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
 
         user.FirstName = request.FirstName.Trim();
         user.LastName = request.LastName.Trim();
@@ -32,9 +32,9 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
 
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
-            throw new BadRequestException("UNABLE_TO_UPDATE_PROFILE");
+            throw new BadRequestException("Unable to update profile.");
 
-        return Result.Success(new UserProfileDto
+        return ApiResponse<UserProfileDto>.Ok(new UserProfileDto
         {
             Id = user.Id,
             Email = user.Email ?? string.Empty,
@@ -49,6 +49,6 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             Address = user.Address,
             EmergencyContactName = user.EmergencyContactName,
             EmergencyContactPhone = user.EmergencyContactPhone
-        }, "PROFILE_UPDATED_SUCCESS");
+        }, "Profile updated successfully.");
     }
 }

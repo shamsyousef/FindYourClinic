@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Infrastructure.Persistence;
@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Doctors.UpdateOwnDoctorProfile;
 
-public class UpdateOwnDoctorProfileCommandHandler : IRequestHandler<UpdateOwnDoctorProfileCommand, Result>
+public class UpdateOwnDoctorProfileCommandHandler : IRequestHandler<UpdateOwnDoctorProfileCommand, ApiResponse<object>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -16,22 +16,22 @@ public class UpdateOwnDoctorProfileCommandHandler : IRequestHandler<UpdateOwnDoc
         _dbContext = dbContext;
     }
 
-    public async Task<Result> Handle(UpdateOwnDoctorProfileCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(UpdateOwnDoctorProfileCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Doctor)
         {
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_UPDATE_PROFILE");
+            throw new ForbiddenException("Only doctors can update doctor profiles.");
         }
 
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         var specialtyExists = await _dbContext.Specialties.AnyAsync(x => x.Id == request.SpecialtyId && x.IsActive, cancellationToken);
         if (!specialtyExists)
         {
-            throw new BadRequestException("INVALID_SPECIALTY");
+            throw new BadRequestException("Invalid specialty.");
         }
 
         doctorProfile.SpecialtyId = request.SpecialtyId;
@@ -49,6 +49,6 @@ public class UpdateOwnDoctorProfileCommandHandler : IRequestHandler<UpdateOwnDoc
         doctorProfile.User!.PhoneNumber = request.PhoneNumber?.Trim();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Success("DOCTOR_PROFILE_UPDATED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Doctor profile updated.");
     }
 }

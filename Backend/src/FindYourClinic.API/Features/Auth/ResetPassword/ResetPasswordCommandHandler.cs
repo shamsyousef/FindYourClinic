@@ -26,16 +26,17 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
         if (tokenEntity is null || tokenEntity.IsUsed || tokenEntity.ExpiresAt <= DateTime.UtcNow)
         {
-            throw new BadRequestException("INVALID_OR_EXPIRED_RESET_TOKEN");
+            throw new BadRequestException("Invalid or expired reset token.");
         }
 
         var user = await _userManager.FindByIdAsync(tokenEntity.UserId.ToString())
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
+
         var passwordToken = await _userManager.GeneratePasswordResetTokenAsync(user);
         var resetResult = await _userManager.ResetPasswordAsync(user, passwordToken, request.NewPassword);
         if (!resetResult.Succeeded)
         {
-            throw new BadRequestException("UNABLE_TO_RESET_PASSWORD");
+            throw new BadRequestException("Unable to reset password.");
         }
 
         tokenEntity.IsUsed = true;
@@ -50,6 +51,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ApiResponse<object>.Ok(null, "PASSWORD_RESET_SUCCESSFUL");
+        return ApiResponse<object>.Ok(null, "Password has been reset successfully.");
     }
 }

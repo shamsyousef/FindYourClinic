@@ -1,10 +1,10 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Payments.InitiatePayment;
 
-public class InitiatePaymentCommand : IRequest<Result<InitiatePaymentResult>>
+public class InitiatePaymentCommand : IRequest<ApiResponse<InitiatePaymentResult>>
 {
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }

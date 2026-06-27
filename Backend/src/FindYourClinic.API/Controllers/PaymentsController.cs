@@ -2,7 +2,6 @@ using FindYourClinic.API.Common;
 using FindYourClinic.API.Features.Payments.ConfirmPayment;
 using FindYourClinic.API.Features.Payments.InitiatePayment;
 using FindYourClinic.API.Features.Payments.PaymobWebhook;
-using FindYourClinic.API.Localization;
 using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using MediatR;
@@ -39,7 +38,7 @@ public class PaymentsController : ControllerBase
             PaymentMethod = request.PaymentMethod,
             WalletPhone = request.WalletPhone
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     /// <summary>
@@ -60,7 +59,7 @@ public class PaymentsController : ControllerBase
             PaymobTransactionId = request.PaymobTransactionId,
             PaymentMethod = request.PaymentMethod
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     /// <summary>
@@ -88,7 +87,7 @@ public class PaymentsController : ControllerBase
             UserId = UserContext.GetRequiredUserId(User),
             Role = UserContext.GetRequiredRole(User)
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     /// <summary>

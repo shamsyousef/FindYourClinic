@@ -3,7 +3,6 @@ using FindYourClinic.API.Features.Users.GetPatientProfileForDoctor;
 using FindYourClinic.API.Features.Users.GetProfile;
 using FindYourClinic.API.Features.Users.UpdateProfile;
 using FindYourClinic.API.Features.Users.UpdateProfileImage;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -55,7 +54,7 @@ public class UsersController : ControllerBase
             EmergencyContactPhone = request.EmergencyContactPhone,
         });
 
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpGet("patient/{patientId:guid}")]
@@ -84,7 +83,7 @@ public class UsersController : ControllerBase
             File = file
         });
 
-        return this.WriteFromResult(result);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("request-deletion")]
@@ -101,7 +100,7 @@ public class UsersController : ControllerBase
         };
 
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 }
 

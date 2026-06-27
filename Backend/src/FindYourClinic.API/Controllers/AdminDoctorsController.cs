@@ -8,9 +8,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using FindYourClinic.API.Features.Admin.DeleteUser;
-using FindYourClinic.API.Localization;
-using FindYourClinic.Domain.Common;
 
 namespace FindYourClinic.API.Controllers;
 
@@ -27,9 +24,7 @@ public class AdminDoctorsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllDoctors(
-    [FromQuery] string? status,
-    CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllDoctors([FromQuery] string? status, CancellationToken cancellationToken)
     {
         DoctorStatus? parsedStatus = status switch
         {
@@ -39,13 +34,9 @@ public class AdminDoctorsController : ControllerBase
             _ => null
         };
 
-        var result = await _mediator.Send(
-            new GetAllDoctorsQuery(parsedStatus),
-            cancellationToken);
-
+        var result = await _mediator.Send(new GetAllDoctorsQuery(parsedStatus), cancellationToken);
         return Ok(result);
     }
-
 
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingDoctors()
@@ -54,62 +45,36 @@ public class AdminDoctorsController : ControllerBase
         return Ok(result);
     }
 
-
     [HttpPost("{doctorId:guid}/approve")]
     public async Task<IActionResult> ApproveDoctor([FromRoute] Guid doctorId)
     {
         var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (string.IsNullOrWhiteSpace(adminId) || !Guid.TryParse(adminId, out var parsedAdminId))
             return Unauthorized();
 
-        var command = new ApproveDoctorCommand
-        {
-            DoctorId = doctorId,
-            AdminId = parsedAdminId
-        };
-
+        var command = new ApproveDoctorCommand { DoctorId = doctorId, AdminId = parsedAdminId };
         var result = await _mediator.Send(command);
-
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
-
 
     [HttpPost("{doctorId:guid}/reject")]
-    public async Task<IActionResult> RejectDoctor(
-        [FromRoute] Guid doctorId,
-        [FromBody] RejectDoctorRequest request)
+    public async Task<IActionResult> RejectDoctor([FromRoute] Guid doctorId, [FromBody] RejectDoctorRequest request)
     {
         var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (string.IsNullOrWhiteSpace(adminId) || !Guid.TryParse(adminId, out var parsedAdminId))
             return Unauthorized();
 
-        var command = new RejectDoctorCommand
-        {
-            DoctorId = doctorId,
-            AdminId = parsedAdminId,
-            Reason = request.Reason
-        };
-
+        var command = new RejectDoctorCommand { DoctorId = doctorId, AdminId = parsedAdminId, Reason = request.Reason };
         var result = await _mediator.Send(command);
-
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
-
 
     [HttpPost("{doctorId:guid}/toggle-active")]
-    public async Task<IActionResult> ToggleDoctorActive(
-        [FromRoute] Guid doctorId,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> ToggleDoctorActive([FromRoute] Guid doctorId, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(
-            new ToggleDoctorActiveCommand(doctorId),
-            cancellationToken);
-
-        return this.WriteFromResult(result);
+        var result = await _mediator.Send(new ToggleDoctorActiveCommand(doctorId), cancellationToken);
+        return Ok(result);
     }
-
 
     [HttpPost("{doctorId:guid}/request-availability")]
     public async Task<IActionResult> RequestDoctorAvailability(
@@ -119,120 +84,58 @@ public class AdminDoctorsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (string.IsNullOrWhiteSpace(adminId) || !Guid.TryParse(adminId, out _))
             return Unauthorized();
 
-
-        var doctor = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
-            .FirstOrDefaultAsync(
-                dbContext.Users,
-                x => x.Id == doctorId &&
-                     x.Role == UserRole.Doctor,
-                cancellationToken);
-
+        var doctor = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            dbContext.Users,
+            x => x.Id == doctorId && x.Role == FindYourClinic.Domain.Enums.UserRole.Doctor,
+            cancellationToken);
 
         if (doctor == null)
-        {
-            return this.WriteFromResult(
-                ApiResponse<object>.Fail("DOCTOR_NOT_FOUND")
-            );
-        }
-
+            return NotFound(FindYourClinic.Domain.Common.ApiResponse<object>.Fail("Doctor not found."));
 
         await notificationService.SendToUserAsync(
             doctorId,
-            "AVAILABILITY_UPDATE_NEEDED",
-            "PLEASE_UPDATE_AVAILABILITY",
-            new Dictionary<string, string>
-            {
-                ["type"] = "AvailabilityRequest"
-            },
+            "Availability Update Needed",
+            "Please update your schedule and add availability slots so patients can book appointments with you.",
+            new Dictionary<string, string> { ["type"] = "AvailabilityRequest" },
             cancellationToken);
 
-
-        return this.WriteFromResult(
-            ApiResponse<object>.Ok(
-                null,
-                "AVAILABILITY_REQUEST_SENT_TO_DOCTOR"
-            )
-        );
+        return Ok(FindYourClinic.Domain.Common.ApiResponse<object>.Ok(null, "Availability request sent to doctor."));
     }
-
 
     [HttpPost("{doctorId:guid}/pending")]
     public async Task<IActionResult> SetDoctorPending([FromRoute] Guid doctorId)
     {
         var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (string.IsNullOrWhiteSpace(adminId) || !Guid.TryParse(adminId, out var parsedAdminId))
             return Unauthorized();
 
-
-        var command = new SetDoctorPendingCommand
-        {
-            DoctorId = doctorId,
-            AdminId = parsedAdminId
-        };
-
-
+        var command = new SetDoctorPendingCommand { DoctorId = doctorId, AdminId = parsedAdminId };
         var result = await _mediator.Send(command);
-
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
-
 
     [HttpDelete("{doctorId:guid}")]
-    public async Task<IActionResult> DeleteDoctor(
-        [FromRoute] Guid doctorId,
-        [FromBody] DeleteDoctorRequest request)
+    public async Task<IActionResult> DeleteDoctor([FromRoute] Guid doctorId, [FromBody] DeleteDoctorRequest request)
     {
-        var command = new FindYourClinic.API.Features.Admin.DeleteDoctor.DeleteDoctorCommand
-        {
-            DoctorId = doctorId,
-            Reason = request.Reason
+        var command = new FindYourClinic.API.Features.Admin.DeleteDoctor.DeleteDoctorCommand 
+        { 
+            DoctorId = doctorId, 
+            Reason = request.Reason 
         };
-
-
         var result = await _mediator.Send(command);
-
-        return this.WriteFromResult(result);
-    }
-
-
-    [HttpDelete("{userId:guid}")]
-    public async Task<IActionResult> DeleteUser(
-        [FromRoute] Guid userId,
-        [FromBody] DeleteUserRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = new DeleteUserCommand
-        {
-            UserId = userId,
-            Reason = request.Reason
-        };
-
-
-        var result = await _mediator.Send(command, cancellationToken);
-
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 }
-
 
 public class RejectDoctorRequest
 {
     public string Reason { get; set; } = string.Empty;
 }
 
-
 public class DeleteDoctorRequest
-{
-    public string Reason { get; set; } = string.Empty;
-}
-
-
-public class DeleteUserRequest
 {
     public string Reason { get; set; } = string.Empty;
 }

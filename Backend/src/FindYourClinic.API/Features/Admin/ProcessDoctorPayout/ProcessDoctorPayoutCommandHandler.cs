@@ -20,16 +20,16 @@ public class ProcessDoctorPayoutCommandHandler : IRequestHandler<ProcessDoctorPa
             .FirstOrDefaultAsync(w => w.DoctorProfileId == request.DoctorProfileId, cancellationToken);
 
         if (wallet is null)
-            return ApiResponse<string>.Fail("DOCTOR_WALLET_NOT_FOUND");
+            return ApiResponse<string>.Fail("Doctor wallet not found.");
 
         if (wallet.PendingBalance <= 0)
-            return ApiResponse<string>.Fail("NO_PENDING_BALANCE_TO_PAYOUT");
+            return ApiResponse<string>.Fail("No pending balance to payout.");
 
         wallet.WithdrawnAmount += wallet.PendingBalance;
         wallet.PendingBalance = 0;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ApiResponse<string>.Ok("PAYOUT_RECORDED_SUCCESS");
+        return ApiResponse<string>.Ok("Payout recorded successfully.");
     }
 }

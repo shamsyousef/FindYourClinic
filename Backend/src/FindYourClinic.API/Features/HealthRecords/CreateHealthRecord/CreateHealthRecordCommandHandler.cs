@@ -1,5 +1,5 @@
-using Ardalis.Result;
 using FindYourClinic.API.Features.HealthRecords.Shared;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
@@ -9,7 +9,7 @@ using MediatR;
 
 namespace FindYourClinic.API.Features.HealthRecords.CreateHealthRecord;
 
-public class CreateHealthRecordCommandHandler : IRequestHandler<CreateHealthRecordCommand, Result<HealthRecordDto>>
+public class CreateHealthRecordCommandHandler : IRequestHandler<CreateHealthRecordCommand, ApiResponse<HealthRecordDto>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ICloudinaryService _cloudinaryService;
@@ -20,13 +20,13 @@ public class CreateHealthRecordCommandHandler : IRequestHandler<CreateHealthReco
         _cloudinaryService = cloudinaryService;
     }
 
-    public async Task<Result<HealthRecordDto>> Handle(CreateHealthRecordCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<HealthRecordDto>> Handle(CreateHealthRecordCommand request, CancellationToken cancellationToken)
     {
         EnsurePatient(request.Role);
 
         if (string.IsNullOrWhiteSpace(request.Title))
         {
-            throw new BadRequestException("TITLE_REQUIRED");
+            throw new BadRequestException("Title is required.");
         }
 
         string? fileUrl = null;
@@ -59,16 +59,16 @@ public class CreateHealthRecordCommandHandler : IRequestHandler<CreateHealthReco
 
         _dbContext.HealthRecords.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Success(
+        return ApiResponse<HealthRecordDto>.Ok(
             new HealthRecordDto(entity.Id, entity.Title, entity.Type.ToString(), entity.Value, entity.Unit, entity.RecordedAt, entity.Notes, entity.FileUrl),
-            "HEALTH_RECORD_CREATED_SUCCESS");
+            "Health record created.");
     }
 
     private static void EnsurePatient(UserRole role)
     {
         if (role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_ACCESS_HEALTH_RECORDS");
+            throw new ForbiddenException("Only patients can access health records.");
         }
     }
 }

@@ -33,12 +33,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
         var user = await _userManager.FindByEmailAsync(request.Email.Trim().ToLowerInvariant());
         if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
         {
-            return ApiResponse<AuthResponse>.Fail("INVALID_EMAIL_OR_PASSWORD");
+            return ApiResponse<AuthResponse>.Fail("Invalid email or password.");
         }
 
         if (user.DeletionRequestedAt.HasValue)
         {
-            throw new ForbiddenException("YOUR_ACCOUNT_IS_SCHEDULED_FOR_DELETION");
+            throw new ForbiddenException("Your account is scheduled for deletion. Please contact support to cancel the deletion.");
         }
 
         if (user.Role == UserRole.Doctor && !user.IsActive)
@@ -48,10 +48,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
 
             if (doctorProfile?.Status == DoctorStatus.Rejected)
             {
-                throw new ForbiddenException("YOUR_ACCOUNT_HAS_BEEN_REJECTED");
+                throw new ForbiddenException($"Your account has been rejected. Reason: {doctorProfile.RejectionReason ?? "No reason provided."}");
             }
 
-            throw new ForbiddenException("YOUR_ACCOUNT_IS_UNDER_REVIEW");
+            throw new ForbiddenException("Your account is under review. You will be notified once approved (24-48 hours).");
         }
 
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id);
@@ -72,6 +72,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
             }
         };
 
-        return ApiResponse<AuthResponse>.Ok(response, "LOGIN_SUCCESSFUL");
+        return ApiResponse<AuthResponse>.Ok(response, "Logged in successfully.");
     }
 }

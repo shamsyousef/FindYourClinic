@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Reviews.AddReview;
 
-public class AddReviewCommandHandler : IRequestHandler<AddReviewCommand, Result>
+public class AddReviewCommandHandler : IRequestHandler<AddReviewCommand, ApiResponse<object>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -17,21 +17,21 @@ public class AddReviewCommandHandler : IRequestHandler<AddReviewCommand, Result>
         _dbContext = dbContext;
     }
 
-    public async Task<Result> Handle(AddReviewCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(AddReviewCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_SUBMIT_REVIEWS");
+            throw new ForbiddenException("Only patients can submit reviews.");
         }
 
         if (request.Rating is < 1 or > 5)
         {
-            throw new BadRequestException("RATING_MUST_BE_BETWEEN_1_AND_5");
+            throw new BadRequestException("Rating must be between 1 and 5.");
         }
 
         var doctorProfile = await _dbContext.DoctorProfiles
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId && x.Status == DoctorStatus.Approved, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         var hadCompletedAppointment = await _dbContext.Appointments.AnyAsync(
             x => x.PatientId == request.UserId &&
@@ -40,7 +40,7 @@ public class AddReviewCommandHandler : IRequestHandler<AddReviewCommand, Result>
             cancellationToken);
         if (!hadCompletedAppointment)
         {
-            throw new ForbiddenException("ONLY_REVIEW_DOCTORS_AFTER_COMPLETED_APPOINTMENTS");
+            throw new ForbiddenException("You can only review doctors after completed appointments.");
         }
 
         var existing = await _dbContext.DoctorReviews.FirstOrDefaultAsync(
@@ -67,6 +67,6 @@ public class AddReviewCommandHandler : IRequestHandler<AddReviewCommand, Result>
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Success("REVIEW_SUBMITTED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Review submitted.");
     }
 }

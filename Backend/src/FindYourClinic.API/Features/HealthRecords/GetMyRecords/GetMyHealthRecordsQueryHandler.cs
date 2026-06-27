@@ -32,7 +32,7 @@ public class GetMyHealthRecordsQueryHandler : IRequestHandler<GetMyHealthRecords
 
         var records = await query
             .OrderByDescending(x => x.RecordedAt)
-            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.Unit, x.RecordedAt, x.Notes,x.FileUrl))
+            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.Unit, x.RecordedAt, x.Notes, x.FileUrl))
             .ToListAsync(cancellationToken);
 
         return ApiResponse<List<HealthRecordDto>>.Ok(records);
@@ -42,7 +42,7 @@ public class GetMyHealthRecordsQueryHandler : IRequestHandler<GetMyHealthRecords
     {
         if (role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_ACCESS_HEALTH_RECORDS");
+            throw new ForbiddenException("Only patients can access health records.");
         }
     }
 }

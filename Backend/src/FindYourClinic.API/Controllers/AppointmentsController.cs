@@ -6,7 +6,6 @@ using FindYourClinic.API.Features.Appointments.ConfirmAppointment;
 using FindYourClinic.API.Features.Appointments.GetAppointmentById;
 using FindYourClinic.API.Features.Appointments.GetDoctorAppointments;
 using FindYourClinic.API.Features.Appointments.GetMyAppointments;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +35,7 @@ public class AppointmentsController : ControllerBase
             ScheduledAt = request.ScheduledAt,
             LocationName = request.LocationName
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpGet("my")]
@@ -82,7 +81,7 @@ public class AppointmentsController : ControllerBase
             UserId = UserContext.GetRequiredUserId(User),
             Role = UserContext.GetRequiredRole(User)
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPut("{id:guid}/confirm")]
@@ -94,7 +93,7 @@ public class AppointmentsController : ControllerBase
             UserId = UserContext.GetRequiredUserId(User),
             Role = UserContext.GetRequiredRole(User)
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPut("{id:guid}/complete")]
@@ -106,7 +105,7 @@ public class AppointmentsController : ControllerBase
             UserId = UserContext.GetRequiredUserId(User),
             Role = UserContext.GetRequiredRole(User)
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     public sealed class BookAppointmentRequest

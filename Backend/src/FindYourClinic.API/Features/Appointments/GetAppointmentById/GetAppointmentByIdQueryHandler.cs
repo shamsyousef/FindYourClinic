@@ -25,17 +25,17 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
             .Include(x => x.DoctorProfile).ThenInclude(x => x.User)
             .Include(x => x.DoctorProfile).ThenInclude(x => x.Specialty)
             .FirstOrDefaultAsync(x => x.Id == request.AppointmentId, cancellationToken)
-            ?? throw new NotFoundException("APPOINTMENT_NOT_FOUND");
+            ?? throw new NotFoundException("Appointment not found.");
 
         // Authorization: only the patient or doctor on this appointment can view it
         if (request.Role == UserRole.Patient && appointment.PatientId != request.UserId)
         {
-            throw new ForbiddenException("FORBIDDEN_TO_VIEW_APPOINTMENT");
+            throw new ForbiddenException("You cannot view this appointment.");
         }
 
         if (request.Role == UserRole.Doctor && appointment.DoctorProfile.UserId != request.UserId)
         {
-            throw new ForbiddenException("FORBIDDEN_TO_VIEW_APPOINTMENT");
+            throw new ForbiddenException("You cannot view this appointment.");
         }
 
         // Map related person based on caller role

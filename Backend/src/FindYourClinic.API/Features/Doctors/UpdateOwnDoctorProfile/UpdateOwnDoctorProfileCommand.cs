@@ -1,10 +1,10 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Doctors.UpdateOwnDoctorProfile;
 
-public class UpdateOwnDoctorProfileCommand : IRequest<Result>
+public class UpdateOwnDoctorProfileCommand : IRequest<ApiResponse<object>>
 {
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }

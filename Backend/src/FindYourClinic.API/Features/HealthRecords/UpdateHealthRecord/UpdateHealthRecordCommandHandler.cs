@@ -1,5 +1,5 @@
-using Ardalis.Result;
 using FindYourClinic.API.Features.HealthRecords.Shared;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Infrastructure.Persistence;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.HealthRecords.UpdateHealthRecord;
 
-public class UpdateHealthRecordCommandHandler : IRequestHandler<UpdateHealthRecordCommand, Result<HealthRecordDto>>
+public class UpdateHealthRecordCommandHandler : IRequestHandler<UpdateHealthRecordCommand, ApiResponse<HealthRecordDto>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -17,18 +17,18 @@ public class UpdateHealthRecordCommandHandler : IRequestHandler<UpdateHealthReco
         _dbContext = dbContext;
     }
 
-    public async Task<Result<HealthRecordDto>> Handle(UpdateHealthRecordCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<HealthRecordDto>> Handle(UpdateHealthRecordCommand request, CancellationToken cancellationToken)
     {
         EnsurePatient(request.Role);
 
         if (string.IsNullOrWhiteSpace(request.Title))
         {
-            throw new BadRequestException("TITLE_REQUIRED");
+            throw new BadRequestException("Title is required.");
         }
 
         var record = await _dbContext.HealthRecords
             .FirstOrDefaultAsync(x => x.Id == request.RecordId && x.PatientId == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("HEALTH_RECORD_NOT_FOUND");
+            ?? throw new NotFoundException("Health record not found.");
 
         record.Title = request.Title.Trim();
         record.Type = request.Type;
@@ -39,16 +39,16 @@ public class UpdateHealthRecordCommandHandler : IRequestHandler<UpdateHealthReco
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(
+        return ApiResponse<HealthRecordDto>.Ok(
             new HealthRecordDto(record.Id, record.Title, record.Type.ToString(), record.Value, record.Unit, record.RecordedAt, record.Notes, record.FileUrl),
-            "HEALTH_RECORD_UPDATED_SUCCESS");
+            "Health record updated.");
     }
 
     private static void EnsurePatient(UserRole role)
     {
         if (role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_UPDATE_HEALTH_RECORDS");
+            throw new ForbiddenException("Only patients can update health records.");
         }
     }
 }

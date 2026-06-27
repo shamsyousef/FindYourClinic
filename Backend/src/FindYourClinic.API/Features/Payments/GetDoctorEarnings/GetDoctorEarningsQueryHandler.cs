@@ -19,12 +19,12 @@ public class GetDoctorEarningsQueryHandler : IRequestHandler<GetDoctorEarningsQu
     public async Task<ApiResponse<DoctorEarningsDto>> Handle(GetDoctorEarningsQuery request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Doctor)
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_VIEW_EARNINGS");
+            throw new ForbiddenException("Only doctors can view earnings.");
 
         var doctorProfile = await _dbContext.DoctorProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         var wallet = await _dbContext.DoctorWallets
             .AsNoTracking()

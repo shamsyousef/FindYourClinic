@@ -1,9 +1,9 @@
-using System.Net;
-using System.Text;
-using System.Text.Json;
 using FindYourClinic.Domain.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace FindYourClinic.API.Services;
 
@@ -41,7 +41,7 @@ public class GeminiService : IGeminiService
         _logger = logger;
     }
 
-    public async Task<string> GenerateResponseAsync(List<(string role, string content)> conversationHistory, string? systemPrompt = null)
+    public async Task<string> GenerateResponseAsync(List<(string role, string content)> conversationHistory, string? systemPrompt = null, string language = "en")
     {
         var apiKey = _configuration["Gemini:ApiKey"]
             ?? throw new InvalidOperationException("Gemini:ApiKey is not configured.");
@@ -52,7 +52,10 @@ public class GeminiService : IGeminiService
         var models = new List<string> { primaryModel };
         models.AddRange(fallbackModels.Where(m => !string.IsNullOrWhiteSpace(m) && m != primaryModel));
 
-        var effectiveSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? MedicalSystemPrompt : systemPrompt;
+        var languageInstruction = language.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
+            ? " IMPORTANT: You MUST respond entirely in Arabic language."
+            : " IMPORTANT: You MUST respond entirely in English language.";
+        var effectiveSystemPrompt = (string.IsNullOrWhiteSpace(systemPrompt) ? MedicalSystemPrompt : systemPrompt) + languageInstruction;
 
         var contents = conversationHistory.Select(turn => new
         {

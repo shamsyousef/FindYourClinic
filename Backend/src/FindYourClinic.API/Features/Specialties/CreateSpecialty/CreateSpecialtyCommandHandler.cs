@@ -1,5 +1,5 @@
-using Ardalis.Result;
 using FindYourClinic.API.Features.Specialties.Shared;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Infrastructure.Persistence;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Specialties.CreateSpecialty;
 
-public class CreateSpecialtyCommandHandler : IRequestHandler<CreateSpecialtyCommand, Result<SpecialtyDto>>
+public class CreateSpecialtyCommandHandler : IRequestHandler<CreateSpecialtyCommand, ApiResponse<SpecialtyDto>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +17,11 @@ public class CreateSpecialtyCommandHandler : IRequestHandler<CreateSpecialtyComm
         _dbContext = dbContext;
     }
 
-    public async Task<Result<SpecialtyDto>> Handle(CreateSpecialtyCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<SpecialtyDto>> Handle(CreateSpecialtyCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            throw new BadRequestException("NAME_REQUIRED");
+            throw new BadRequestException("Name is required.");
         }
 
         var normalizedName = request.Name.Trim();
@@ -30,7 +30,7 @@ public class CreateSpecialtyCommandHandler : IRequestHandler<CreateSpecialtyComm
             cancellationToken);
         if (exists)
         {
-            throw new BadRequestException("SPECIALTY_ALREADY_EXISTS");
+            throw new BadRequestException("Specialty already exists.");
         }
 
         var specialty = new Specialty
@@ -42,6 +42,6 @@ public class CreateSpecialtyCommandHandler : IRequestHandler<CreateSpecialtyComm
         _dbContext.Specialties.Add(specialty);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new SpecialtyDto(specialty.Id, specialty.Name, specialty.IconUrl), "SPECIALTY_CREATED_SUCCESS");
+        return ApiResponse<SpecialtyDto>.Ok(new SpecialtyDto(specialty.Id, specialty.Name, specialty.IconUrl), "Specialty created.");
     }
 }

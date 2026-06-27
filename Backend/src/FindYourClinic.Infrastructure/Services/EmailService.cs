@@ -1,7 +1,9 @@
 using FindYourClinic.Domain.Interfaces;
+using FindYourClinic.Domain.Resources;
 using FindYourClinic.Infrastructure.Options;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
@@ -10,14 +12,17 @@ namespace FindYourClinic.Infrastructure.Services;
 public class EmailService : IEmailService
 {
     private readonly EmailSettings _settings;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public EmailService(IOptions<EmailSettings> settings)
+    public EmailService(IOptions<EmailSettings> settings, IStringLocalizer<SharedResource> localizer)
     {
         _settings = settings.Value;
+        _localizer = localizer;
     }
 
     public Task SendPasswordResetEmailAsync(string toEmail, string resetLink)
     {
+        var subject = _localizer["Email.PasswordReset.Subject"];
         var body = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;"">
     <h2 style=""color: #333; text-align: center;"">Password Reset Request</h2>
@@ -27,13 +32,14 @@ public class EmailService : IEmailService
     </div>
     <p style=""color: #777; font-size: 14px;"">If you did not request a password reset, please ignore this email.</p>
 </div>";
-        return SendEmailAsync(toEmail, "Reset Your Password", body, true);
+        return SendEmailAsync(toEmail, subject, body, true);
     }
 
     public Task SendDoctorApprovedEmailAsync(string toEmail, string doctorName)
     {
+        var subject = _localizer["Email.DoctorApproved.Subject"];
         var body = $"Hello {doctorName}, your account has been approved. You can now login.";
-        return SendEmailAsync(toEmail, "Doctor Account Approved", body);
+        return SendEmailAsync(toEmail, subject, body, true);
     }
 
     public Task SendDoctorRejectedEmailAsync(string toEmail, string doctorName, string reason)

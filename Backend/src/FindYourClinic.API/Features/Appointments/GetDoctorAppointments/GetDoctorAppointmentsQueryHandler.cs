@@ -21,7 +21,7 @@ public class GetDoctorAppointmentsQueryHandler : IRequestHandler<GetDoctorAppoin
     {
         if (request.Role != UserRole.Doctor)
         {
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_ACCESS_THIS_ENDPOINT");
+            throw new ForbiddenException("Only doctors can access this endpoint.");
         }
 
         var doctorProfileId = await _dbContext.DoctorProfiles
@@ -29,7 +29,7 @@ public class GetDoctorAppointmentsQueryHandler : IRequestHandler<GetDoctorAppoin
             .Where(x => x.UserId == request.UserId)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         var items = await _dbContext.Appointments
             .AsNoTracking()

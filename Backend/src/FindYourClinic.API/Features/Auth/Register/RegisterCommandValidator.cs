@@ -12,7 +12,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
         RuleFor(x => x.Role)
             .NotEmpty()
             .Must(x => Enum.TryParse<UserRole>(x, true, out _))
-            .WithMessage("ROLE_MUST_BE_DOCTOR_OR_PATIENT");
+            .WithMessage("Role must be Patient or Doctor.");
 
         When(x => x.Role.Equals(UserRole.Patient.ToString(), StringComparison.OrdinalIgnoreCase), () =>
         {

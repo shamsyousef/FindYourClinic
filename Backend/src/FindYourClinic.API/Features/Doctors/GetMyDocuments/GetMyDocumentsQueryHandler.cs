@@ -24,7 +24,7 @@ public class GetMyDocumentsQueryHandler : IRequestHandler<GetMyDocumentsQuery, A
             .FirstOrDefaultAsync(cancellationToken);
 
         if (profileId == Guid.Empty)
-            throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            throw new NotFoundException("Doctor profile not found.");
 
         var documents = await _dbContext.DoctorDocuments
             .AsNoTracking()

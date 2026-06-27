@@ -1,8 +1,8 @@
-
-using Ardalis.Result;
 using FindYourClinic.Domain.Common;
+using FindYourClinic.Domain.Constants;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
+using FindYourClinic.Domain.Interfaces;
 using FindYourClinic.Domain.Services;
 using FindYourClinic.Infrastructure.Persistence;
 using MediatR;
@@ -32,11 +32,11 @@ public class SetDoctorPendingCommandHandler : IRequestHandler<SetDoctorPendingCo
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         if (doctorProfile.Status == DoctorStatus.PendingReview)
         {
-            throw new BadRequestException("DOCTOR_ALREADY_PENDING_REVIEW");
+            throw new BadRequestException("Doctor is already pending review.");
         }
 
         doctorProfile.Status = DoctorStatus.PendingReview;
@@ -65,10 +65,6 @@ public class SetDoctorPendingCommandHandler : IRequestHandler<SetDoctorPendingCo
             _logger.LogError(ex, "Failed to send pending review notification to {UserId}", doctorProfile.UserId);
         }
 
-        return ApiResponse<object>.Ok(
-
-            null,
-            "DOCTOR_SET_PENDING_SUCCESS"
-            );
+        return ApiResponse<object>.Ok(null, "Doctor moved to pending review successfully.");
     }
 }

@@ -22,14 +22,15 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
     public async Task<ApiResponse<object>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId.ToString())
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
 
         var passwordCorrect = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
         if (!passwordCorrect)
-            throw new BadRequestException("CURRENT_PASSWORD_INCORRECT");
+            throw new BadRequestException("Current password is incorrect.");
+
         var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
-            throw new BadRequestException("UNABLE_TO_CHANGE_PASSWORD");
+            throw new BadRequestException("Unable to change password.");
 
         // Revoke all existing refresh tokens so other sessions are invalidated.
         var activeTokens = await _dbContext.RefreshTokens
@@ -40,6 +41,6 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             token.IsRevoked = true;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ApiResponse<object>.Ok(null, "PASSWORD_CHANGED_SUCCESSFULLY");
+        return ApiResponse<object>.Ok(null, "Password changed successfully.");
     }
 }

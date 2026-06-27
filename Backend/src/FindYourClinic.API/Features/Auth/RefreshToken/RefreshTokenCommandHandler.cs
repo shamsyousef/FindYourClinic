@@ -31,13 +31,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
 
         if (existing is null || existing.IsRevoked || existing.ExpiresAt <= DateTime.UtcNow)
         {
-            return ApiResponse<AuthResponse>.Fail("INVALID_REFRESH_TOKEN");
+            return ApiResponse<AuthResponse>.Fail("Invalid refresh token.");
         }
 
         var user = await _userManager.FindByIdAsync(existing.UserId.ToString());
         if (user is null)
         {
-            return ApiResponse<AuthResponse>.Fail("USER_NOT_FOUND");
+            return ApiResponse<AuthResponse>.Fail("User not found.");
         }
 
         existing.IsRevoked = true;
@@ -59,6 +59,6 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
             }
         };
 
-        return ApiResponse<AuthResponse>.Ok(response, "TOKEN_REFRESH_SUCCESSFUL");
+        return ApiResponse<AuthResponse>.Ok(response, "Token refreshed successfully.");
     }
 }

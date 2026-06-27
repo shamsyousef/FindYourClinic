@@ -15,13 +15,14 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Threading.RateLimiting;
 using FindYourClinic.Infrastructure.BackgroundJobs;
-using FindYourClinic.API.Localization;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddApplicationLocalization();
+builder.Services.AddLocalization();
+builder.Services.AddControllers()
+    .AddDataAnnotationsLocalization();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<AccountCleanupBackgroundService>();
@@ -151,15 +152,20 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+var supportedCultures = new[] { "en", "ar" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("en")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
+
 
 using (var scope = app.Services.CreateScope())
 {
     await scope.ServiceProvider.SeedAdminAsync(builder.Configuration);
     await scope.ServiceProvider.SeedDevelopmentDataAsync();
-    
-    // Preload translations on startup
-    var locMgr = scope.ServiceProvider.GetRequiredService<ILocalizationManager>();
-    await locMgr.PreloadTranslationsAsync(new[] { "en", "ar" });
+ 
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();

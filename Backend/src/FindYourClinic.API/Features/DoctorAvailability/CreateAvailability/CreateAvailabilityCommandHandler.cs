@@ -25,7 +25,7 @@ public class CreateAvailabilityCommandHandler : IRequestHandler<CreateAvailabili
             .Where(x => x.UserId == request.UserId)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         var entity = new Domain.Entities.DoctorAvailability
         {
@@ -39,14 +39,14 @@ public class CreateAvailabilityCommandHandler : IRequestHandler<CreateAvailabili
         _dbContext.DoctorAvailabilities.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ApiResponse<AvailabilityDto>.Ok(ToDto(entity), "AVAILABILITY_ADDED_SUCCESS");
+        return ApiResponse<AvailabilityDto>.Ok(ToDto(entity), "Availability added.");
     }
 
     private static void EnsureDoctor(UserRole role)
     {
         if (role != UserRole.Doctor)
         {
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_MANAGE_AVAILABILITY");
+            throw new ForbiddenException("Only doctors can manage availability.");
         }
     }
 

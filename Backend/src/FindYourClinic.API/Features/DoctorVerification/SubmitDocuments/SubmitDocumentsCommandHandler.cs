@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Domain.Interfaces;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.DoctorVerification.SubmitDocuments;
 
-public class SubmitDocumentsCommandHandler : IRequestHandler<SubmitDocumentsCommand, Result<List<UploadedDoctorDocumentDto>>>
+public class SubmitDocumentsCommandHandler : IRequestHandler<SubmitDocumentsCommand, ApiResponse<List<UploadedDoctorDocumentDto>>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ICloudinaryService _cloudinaryService;
@@ -19,7 +19,7 @@ public class SubmitDocumentsCommandHandler : IRequestHandler<SubmitDocumentsComm
         _cloudinaryService = cloudinaryService;
     }
 
-    public async Task<Result<List<UploadedDoctorDocumentDto>>> Handle(SubmitDocumentsCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<List<UploadedDoctorDocumentDto>>> Handle(SubmitDocumentsCommand request, CancellationToken cancellationToken)
     {
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
@@ -27,7 +27,7 @@ public class SubmitDocumentsCommandHandler : IRequestHandler<SubmitDocumentsComm
 
         if (doctorProfile is null || doctorProfile.User.Role != UserRole.Doctor)
         {
-            throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            throw new NotFoundException("Doctor profile not found.");
         }
 
         var uploaded = new List<UploadedDoctorDocumentDto>();
@@ -71,6 +71,6 @@ public class SubmitDocumentsCommandHandler : IRequestHandler<SubmitDocumentsComm
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Success(uploaded, "DOCUMENTS_SUBMITTED_SUCCESS");
+        return ApiResponse<List<UploadedDoctorDocumentDto>>.Ok(uploaded, "Documents uploaded successfully.");
     }
 }

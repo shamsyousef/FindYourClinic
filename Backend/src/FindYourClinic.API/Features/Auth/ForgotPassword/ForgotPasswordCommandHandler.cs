@@ -59,6 +59,6 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
             await _emailService.SendPasswordResetEmailAsync(user.Email ?? request.Email, resetLink);
         }
-        return ApiResponse<object>.Ok(null, "IF_EMAIL_EXISTS_PASSWORD_RESET_LINK_SENT");
+        return ApiResponse<object>.Ok(null, "If this email exists, a password reset link has been sent.");
     }
 }

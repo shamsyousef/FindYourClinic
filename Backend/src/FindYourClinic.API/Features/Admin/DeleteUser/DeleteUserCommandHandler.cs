@@ -1,4 +1,4 @@
-﻿using FindYourClinic.Domain.Common;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Domain.Interfaces;
@@ -33,12 +33,12 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ApiRe
     {
         var user = await _dbContext.Users
             .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
 
         // Prevent admins from deleting other admin accounts
         if (user.Role == UserRole.Admin)
         {
-            throw new BadRequestException("CANNOT_DELETE_ADMIN_ACCOUNTS");
+            throw new BadRequestException("Cannot delete admin accounts.");
         }
 
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
@@ -103,6 +103,6 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ApiRe
         _dbContext.Users.Remove(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ApiResponse<object>.Ok(null, "USER_ACCOUNT_DELETED_SUCCESS");
+        return ApiResponse<object>.Ok(null, $"User account ({fullName}) deleted successfully.");
     }
 }

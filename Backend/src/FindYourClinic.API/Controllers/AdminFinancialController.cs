@@ -2,7 +2,6 @@ using FindYourClinic.API.Features.Admin.GetAllTransactions;
 using FindYourClinic.API.Features.Admin.GetDoctorPayouts;
 using FindYourClinic.API.Features.Admin.GetFinancialStats;
 using FindYourClinic.API.Features.Admin.ProcessDoctorPayout;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +24,7 @@ public class AdminFinancialController : ControllerBase
     public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetFinancialStatsQuery(), cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpGet("transactions")]

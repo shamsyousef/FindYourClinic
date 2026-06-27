@@ -25,7 +25,7 @@ public class GetDoctorWeeklyScheduleQueryHandler
             .Where(x => x.UserId == request.DoctorUserId && x.Status == DoctorStatus.Approved)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         var rules = await _dbContext.DoctorAvailabilities
             .AsNoTracking()

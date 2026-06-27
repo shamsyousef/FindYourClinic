@@ -20,7 +20,7 @@ public class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, ApiRespon
         var user = await _userManager.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
 
         var profile = new UserProfileDto
         {

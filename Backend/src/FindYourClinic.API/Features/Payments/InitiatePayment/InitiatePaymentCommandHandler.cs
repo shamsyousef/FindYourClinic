@@ -1,5 +1,5 @@
-using Ardalis.Result;
 using FindYourClinic.API.Services;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Constants;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Enums;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Payments.InitiatePayment;
 
-public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentCommand, Result<InitiatePaymentResult>>
+public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentCommand, ApiResponse<InitiatePaymentResult>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IPaymobService _paymobService;
@@ -30,23 +30,23 @@ public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentComm
         _configuration = configuration;
     }
 
-    public async Task<Result<InitiatePaymentResult>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<InitiatePaymentResult>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Patient)
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_BOOK");
+            throw new ForbiddenException("Only patients can book appointments.");
 
         // Validate doctor
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.Id == request.DoctorProfileId && x.Status == DoctorStatus.Approved && x.User.IsActive, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         // Validate time
         if (request.ScheduledAt <= DateTime.UtcNow)
-            throw new BadRequestException("APPOINTMENT_MUST_BE_IN_FUTURE");
+            throw new BadRequestException("Appointment must be in the future.");
 
         if (request.ScheduledAt.Second != 0 || request.ScheduledAt.Millisecond != 0 || request.ScheduledAt.Minute % 30 != 0)
-            throw new BadRequestException("APPOINTMENT_SLOTS_30_MINUTES");
+            throw new BadRequestException("Appointments must be booked on 30-minute slots.");
 
         // Validate availability
         var isInsideAvailabilityWindow = await _dbContext.DoctorAvailabilities
@@ -58,7 +58,7 @@ public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentComm
                            request.ScheduledAt.TimeOfDay < x.EndTime,
                 cancellationToken);
         if (!isInsideAvailabilityWindow)
-            throw new BadRequestException("TIME_OUTSIDE_AVAILABILITY");
+            throw new BadRequestException("Selected time is outside doctor availability.");
 
         // Check for overlapping appointment
         var overlapping = await _dbContext.Appointments.AnyAsync(
@@ -67,7 +67,7 @@ public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentComm
                  x.Status != AppointmentStatus.Cancelled,
             cancellationToken);
         if (overlapping)
-            throw new BadRequestException("SLOT_ALREADY_BOOKED");
+            throw new BadRequestException("The selected slot is already booked.");
 
         // Calculate fees
         var consultationFee = doctorProfile.ConsultationFee;
@@ -110,9 +110,9 @@ public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentComm
                 },
                 cancellationToken);
 
-            return Result.Success(
+            return ApiResponse<InitiatePaymentResult>.Ok(
                 new InitiatePaymentResult(appointment.Id, null, null, null, consultationFee, platformFee, total, false),
-                "CASH_APPOINTMENT_CREATED_SUCCESS");
+                "Cash appointment created. Waiting for doctor approval.");
         }
 
         // ─── Online Payment (Card/Wallet) ───
@@ -123,19 +123,19 @@ public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentComm
         if (integrationId <= 0)
         {
             throw new BadRequestException(request.PaymentMethod == PaymentMethod.Card
-                ? "CARD_PAYMENT_NOT_CONFIGURED"
-                : "WALLET_PAYMENT_NOT_CONFIGURED");
+                ? "Card payments are not configured yet. Please use Cash or Mobile Wallet."
+                : "Wallet payments are not configured yet. Please contact support.");
         }
 
         var iframeId = _configuration.GetValue<int>("Paymob:IframeId");
         if (iframeId <= 0)
         {
-            throw new BadRequestException("ONLINE_PAYMENTS_NOT_CONFIGURED");
+            throw new BadRequestException("Online payments are not configured yet.");
         }
         // Wallet requires a phone number
         if (request.PaymentMethod == PaymentMethod.Wallet &&
             string.IsNullOrWhiteSpace(request.WalletPhone))
-            throw new BadRequestException("WALLET_PHONE_REQUIRED");
+            throw new BadRequestException("Wallet phone number is required for mobile wallet payments.");
 
         var amountCents = (int)(total * 100);
         var merchantOrderId = $"FYC-{Guid.NewGuid():N}";
@@ -180,14 +180,14 @@ public class InitiatePaymentCommandHandler : IRequestHandler<InitiatePaymentComm
         if (request.PaymentMethod == PaymentMethod.Wallet)
         {
             var redirectUrl = await _paymobService.InitiateWalletPayAsync(paymentKey, request.WalletPhone!.Trim());
-            return Result.Success(
+            return ApiResponse<InitiatePaymentResult>.Ok(
                 new InitiatePaymentResult(null, paymentKey, paymobOrderId, null, consultationFee, platformFee, total, true, redirectUrl),
-                "WALLET_PAYMENT_INITIATED_SUCCESS");
+                "Wallet payment initiated. Complete payment via your wallet app.");
         }
 
         // ─── Card: standard iframe flow ───
-        return Result.Success(
+        return ApiResponse<InitiatePaymentResult>.Ok(
             new InitiatePaymentResult(null, paymentKey, paymobOrderId, iframeId, consultationFee, platformFee, total, true),
-            "CARD_PAYMENT_INITIATED_SUCCESS");
+            "Payment key generated. Proceed to payment.");
     }
 }

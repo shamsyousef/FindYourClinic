@@ -27,7 +27,7 @@ public class GetDoctorAvailabilityQueryHandler : IRequestHandler<GetDoctorAvaila
             .Where(x => x.UserId == request.DoctorId && x.Status == DoctorStatus.Approved)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         var slots = await _availabilitySlotsService.BuildAvailableSlotsAsync(doctorProfileId, targetDate, cancellationToken);
         return ApiResponse<List<DateTime>>.Ok(slots);

@@ -1,10 +1,10 @@
-using Ardalis.Result;
 using FindYourClinic.API.Features.Users.GetProfile;
+using FindYourClinic.Domain.Common;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Users.UpdateProfile;
 
-public class UpdateProfileCommand : IRequest<Result<UserProfileDto>>
+public class UpdateProfileCommand : IRequest<ApiResponse<UserProfileDto>>
 {
     public Guid UserId { get; set; }
     public string FirstName { get; set; } = string.Empty;

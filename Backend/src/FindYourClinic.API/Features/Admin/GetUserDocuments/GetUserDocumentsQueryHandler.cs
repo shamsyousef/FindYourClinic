@@ -21,7 +21,7 @@ public class GetUserDocumentsQueryHandler : IRequestHandler<GetUserDocumentsQuer
         var user = await _dbContext.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
 
         if (user.Role == UserRole.Doctor)
         {
@@ -52,7 +52,7 @@ public class GetUserDocumentsQueryHandler : IRequestHandler<GetUserDocumentsQuer
             .OrderByDescending(r => r.RecordedAt)
             .Select(r => new DocumentDto
             {
-                Url = r.FileUrl??string.Empty,
+                Url = r.FileUrl ?? string.Empty,
                 Name = r.Title,
                 Type = r.Type.ToString(),
                 UploadedAt = r.RecordedAt

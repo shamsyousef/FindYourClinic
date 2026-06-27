@@ -21,7 +21,7 @@ public class GetPatientRecordsQueryHandler : IRequestHandler<GetPatientRecordsQu
     {
         if (request.Role != UserRole.Doctor)
         {
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_VIEW_PATIENT_RECORDS");
+            throw new ForbiddenException("Only doctors can view patient records.");
         }
 
         // Verify the doctor has an appointment relationship with this patient
@@ -31,7 +31,7 @@ public class GetPatientRecordsQueryHandler : IRequestHandler<GetPatientRecordsQu
 
         if (doctorProfile is null)
         {
-            throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            throw new NotFoundException("Doctor profile not found.");
         }
 
         var hasRelationship = await _dbContext.Appointments
@@ -39,7 +39,7 @@ public class GetPatientRecordsQueryHandler : IRequestHandler<GetPatientRecordsQu
 
         if (!hasRelationship)
         {
-            throw new ForbiddenException("ONLY_VIEW_APPOINTMENT_PATIENT_RECORDS");
+            throw new ForbiddenException("You can only view records of patients you have appointments with.");
         }
 
         var query = _dbContext.HealthRecords

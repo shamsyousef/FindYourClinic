@@ -7,7 +7,6 @@ using FindYourClinic.API.Features.Auth.RefreshToken;
 using FindYourClinic.API.Features.Auth.Register;
 using FindYourClinic.API.Features.Auth.ResetPassword;
 using FindYourClinic.API.Features.DoctorVerification.SubmitDocuments;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +32,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result); ;
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("login")]
@@ -42,7 +41,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result);
+        return result.Success ? Ok(result) : Unauthorized(result);
     }
 
     [HttpPost("google")]
@@ -50,7 +49,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Google([FromBody] GoogleLoginCommand command)
     {
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result); 
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("doctor/upload-documents")]
@@ -71,7 +70,7 @@ public class AuthController : ControllerBase
         };
 
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result); 
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("forgot-password")]
@@ -80,7 +79,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command)
     {
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPost("reset-password")]
@@ -89,7 +88,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
     {
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPost("change-password")]
@@ -98,7 +97,7 @@ public class AuthController : ControllerBase
     {
         command.UserId = UserContext.GetRequiredUserId(User);
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("refresh-token")]
@@ -106,7 +105,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenCommand command)
     {
         var result = await _mediator.Send(command);
-        return this.WriteFromResult(result);
+        return result.Success ? Ok(result) : Unauthorized(result);
     }
 
     [HttpGet("deep-link")]

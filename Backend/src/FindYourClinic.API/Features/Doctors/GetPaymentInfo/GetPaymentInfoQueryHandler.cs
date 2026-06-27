@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Infrastructure.Persistence;
@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Doctors.GetPaymentInfo;
 
-public class GetPaymentInfoQueryHandler : IRequestHandler<GetPaymentInfoQuery, Result<DoctorPaymentInfoDto?>>
+public class GetPaymentInfoQueryHandler : IRequestHandler<GetPaymentInfoQuery, ApiResponse<DoctorPaymentInfoDto>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -16,19 +16,19 @@ public class GetPaymentInfoQueryHandler : IRequestHandler<GetPaymentInfoQuery, R
         _dbContext = dbContext;
     }
 
-    public async Task<Result<DoctorPaymentInfoDto?>> Handle(GetPaymentInfoQuery request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<DoctorPaymentInfoDto>> Handle(GetPaymentInfoQuery request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Doctor)
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_ACCESS_PAYMENT_INFO");
+            throw new ForbiddenException("Only doctors can access payment info.");
 
         var profile = await _dbContext.DoctorProfiles
             .Include(x => x.PaymentInfo)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         if (profile.PaymentInfo is null)
-            return Result.Success<DoctorPaymentInfoDto?>(null, "NO_PAYMENT_INFO_SAVED_YET");
+            return ApiResponse<DoctorPaymentInfoDto>.Ok(null, "No payment info saved yet.");
 
         var dto = new DoctorPaymentInfoDto(
             profile.PaymentInfo.PayoutMethod.ToString(),
@@ -39,6 +39,6 @@ public class GetPaymentInfoQueryHandler : IRequestHandler<GetPaymentInfoQuery, R
             profile.PaymentInfo.AccountNumber,
             profile.PaymentInfo.IBAN);
 
-        return Result.Success<DoctorPaymentInfoDto?>(dto, "PAYMENT_INFO_RETRIEVED_SUCCESS");
+        return ApiResponse<DoctorPaymentInfoDto>.Ok(dto, "Payment info retrieved.");
     }
 }

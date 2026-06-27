@@ -1,11 +1,12 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
+using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Specialties.UpdateSpecialty;
 
-public class UpdateSpecialtyCommandHandler : IRequestHandler<UpdateSpecialtyCommand, Result<Guid>>
+public class UpdateSpecialtyCommandHandler : IRequestHandler<UpdateSpecialtyCommand, ApiResponse<object>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -14,22 +15,15 @@ public class UpdateSpecialtyCommandHandler : IRequestHandler<UpdateSpecialtyComm
         _dbContext = dbContext;
     }
 
-    public async Task<Result<Guid>> Handle(UpdateSpecialtyCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(UpdateSpecialtyCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            return Result.Invalid(new ValidationError
-            {
-                Identifier = nameof(request.Name),
-                ErrorMessage = "NAME_REQUIRED"
-            });
+            throw new BadRequestException("Name is required.");
         }
 
-        var specialty = await _dbContext.Specialties.FirstOrDefaultAsync(x => x.Id == request.SpecialtyId, cancellationToken);
-        if (specialty == null)
-        {
-            return Result.NotFound("SPECIALTY_NOT_FOUND");
-        }
+        var specialty = await _dbContext.Specialties.FirstOrDefaultAsync(x => x.Id == request.SpecialtyId, cancellationToken)
+            ?? throw new NotFoundException("Specialty not found.");
 
         var normalizedName = request.Name.Trim();
         var duplicate = await _dbContext.Specialties.AnyAsync(
@@ -37,7 +31,7 @@ public class UpdateSpecialtyCommandHandler : IRequestHandler<UpdateSpecialtyComm
             cancellationToken);
         if (duplicate)
         {
-            return Result.Conflict("SPECIALTY_ALREADY_EXISTS");
+            throw new BadRequestException("Specialty already exists.");
         }
 
         specialty.Name = normalizedName;
@@ -45,6 +39,6 @@ public class UpdateSpecialtyCommandHandler : IRequestHandler<UpdateSpecialtyComm
         specialty.IsActive = request.IsActive ?? specialty.IsActive;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Success(specialty.Id, "SPECIALTY_UPDATED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Specialty updated.");
     }
 }

@@ -1,9 +1,9 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Specialties.UpdateSpecialty;
 
-public class UpdateSpecialtyCommand : IRequest<Result<Guid>>
+public class UpdateSpecialtyCommand : IRequest<ApiResponse<object>>
 {
     public Guid SpecialtyId { get; set; }
     public string Name { get; set; } = string.Empty;

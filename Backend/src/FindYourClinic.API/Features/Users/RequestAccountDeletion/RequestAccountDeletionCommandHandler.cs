@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Exceptions;
 using FindYourClinic.Infrastructure.Persistence;
@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FindYourClinic.API.Features.Users.RequestAccountDeletion;
 
-public class RequestAccountDeletionCommandHandler : IRequestHandler<RequestAccountDeletionCommand, Result>
+public class RequestAccountDeletionCommandHandler : IRequestHandler<RequestAccountDeletionCommand, ApiResponse<object>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _dbContext;
@@ -20,25 +20,27 @@ public class RequestAccountDeletionCommandHandler : IRequestHandler<RequestAccou
         _dbContext = dbContext;
     }
 
-    public async Task<Result> Handle(RequestAccountDeletionCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(RequestAccountDeletionCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId.ToString());
         if (user is null)
         {
-            throw new NotFoundException("USER_NOT_FOUND");
+            throw new NotFoundException("User not found.");
         }
+
+        // Google-only users have no password — skip password check for them.
         var hasPassword = await _userManager.HasPasswordAsync(user);
         if (hasPassword)
         {
             if (string.IsNullOrWhiteSpace(request.Password) || !await _userManager.CheckPasswordAsync(user, request.Password))
             {
-                throw new BadRequestException("INVALID_PASSWORD_DELETION");
+                throw new BadRequestException("Invalid password. Please enter your correct password to request account deletion.");
             }
         }
 
         if (user.DeletionRequestedAt.HasValue)
         {
-            throw new BadRequestException("ACCOUNT_DELETION_ALREADY_REQUESTED");
+            throw new BadRequestException("Account deletion is already requested.");
         }
 
         user.DeletionRequestedAt = DateTime.UtcNow;
@@ -46,6 +48,6 @@ public class RequestAccountDeletionCommandHandler : IRequestHandler<RequestAccou
         
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success("ACCOUNT_DELETION_REQUESTED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Account deletion requested successfully. Your account will be permanently deleted in 30 days.");
     }
 }

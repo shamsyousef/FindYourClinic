@@ -46,7 +46,7 @@ public class GetDoctorByIdQueryHandler : IRequestHandler<GetDoctorByIdQuery, Api
                 ReviewsCount = _dbContext.DoctorReviews.Count(r => r.DoctorProfileId == x.Id)
             })
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         var nextSlot = await _availabilitySlotsService.GetNextAvailableSlotAsync(doctor.DoctorProfileId, DateTime.UtcNow, cancellationToken);
         var dto = new DoctorDetailsDto(

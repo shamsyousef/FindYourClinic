@@ -3,7 +3,6 @@ using FindYourClinic.API.Features.DoctorAvailability.CreateAvailability;
 using FindYourClinic.API.Features.DoctorAvailability.GetSlots;
 using FindYourClinic.API.Features.DoctorAvailability.Shared;
 using FindYourClinic.API.Features.DoctorAvailability.UpdateAvailability;
-using FindYourClinic.API.Localization;
 using FindYourClinic.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -31,7 +30,7 @@ public class DoctorAvailabilityController : ControllerBase
             DoctorId = doctorId,
             Date = date
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpGet("me")]
@@ -43,7 +42,7 @@ public class DoctorAvailabilityController : ControllerBase
         {
             UserId = userId
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPost]
@@ -61,7 +60,7 @@ public class DoctorAvailabilityController : ControllerBase
         };
 
         var result = await _mediator.Send(command, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPut("{id:guid}")]
@@ -79,7 +78,7 @@ public class DoctorAvailabilityController : ControllerBase
             IsActive = request.IsActive
         };
         var result = await _mediator.Send(command, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     public sealed class UpsertAvailabilityRequest

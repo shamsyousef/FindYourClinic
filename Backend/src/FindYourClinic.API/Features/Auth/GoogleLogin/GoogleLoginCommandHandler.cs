@@ -41,7 +41,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
         var googleUser = await _googleAuthService.VerifyGoogleTokenAsync(request.IdToken);
         if (googleUser is null)
         {
-            return ApiResponse<GoogleLoginResultDto>.Fail("INVALID_GOOGLE_TOKEN");
+            return ApiResponse<GoogleLoginResultDto>.Fail("Invalid Google token.");
         }
 
         var email = googleUser.Email.Trim().ToLowerInvariant();
@@ -51,7 +51,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
         {
             if (string.IsNullOrWhiteSpace(request.Role) || !Enum.TryParse<UserRole>(request.Role, true, out var role))
             {
-                return ApiResponse<GoogleLoginResultDto>.Fail("ROLE_REQUIRED_FOR_FIRST_TIME_GOOGLE_LOGIN");
+                return ApiResponse<GoogleLoginResultDto>.Fail("Role is required for first-time Google login.");
             }
 
             user = await CreateGoogleUserAsync(googleUser, role, request.SpecialtyId, cancellationToken);
@@ -62,7 +62,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
             var pendingToken = _jwtService.GenerateAccessToken(user, isPendingDoctorToken: true);
             return ApiResponse<GoogleLoginResultDto>.Ok(
                 new GoogleLoginResultDto { PendingToken = pendingToken },
-                "YOUR_ACCOUNT_IS_UNDER_REVIEW");
+                "Your account is under review. You will be notified once approved (24-48 hours).");
         }
 
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id);
@@ -83,7 +83,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
             }
         };
 
-        return ApiResponse<GoogleLoginResultDto>.Ok(new GoogleLoginResultDto { Auth = auth }, "GOOGLE_LOGIN_SUCCESSFUL");
+        return ApiResponse<GoogleLoginResultDto>.Ok(new GoogleLoginResultDto { Auth = auth }, "Google login successful.");
     }
 
     private async Task<ApplicationUser> CreateGoogleUserAsync(
@@ -108,7 +108,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
         var result = await _userManager.CreateAsync(user);
         if (!result.Succeeded)
         {
-            throw new InvalidOperationException("GOOGLE_REGISTRATION_FAILED");
+            throw new InvalidOperationException("Google registration failed.");
         }
 
         if (!string.IsNullOrWhiteSpace(googleUser.Picture))
@@ -125,7 +125,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
             if (specialtyId.HasValue)
             {
                 var exists = await _dbContext.Specialties.AnyAsync(s => s.Id == specialtyId.Value && s.IsActive, cancellationToken);
-                doctorSpecialtyId = exists ? specialtyId.Value : throw new InvalidOperationException("INVALID_SPECIALTY_SELECTED");
+                doctorSpecialtyId = exists ? specialtyId.Value : throw new InvalidOperationException("Invalid specialty selected.");
             }
             else
             {

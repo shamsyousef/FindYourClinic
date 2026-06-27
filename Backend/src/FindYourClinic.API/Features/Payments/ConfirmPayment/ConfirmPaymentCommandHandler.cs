@@ -1,5 +1,5 @@
-using Ardalis.Result;
 using FindYourClinic.API.Features.Appointments.Shared;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Constants;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Enums;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Payments.ConfirmPayment;
 
-public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentCommand, Result<AppointmentDto>>
+public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentCommand, ApiResponse<AppointmentDto>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly INotificationService _notificationService;
@@ -27,16 +27,16 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
         _configuration = configuration;
     }
 
-    public async Task<Result<AppointmentDto>> Handle(ConfirmPaymentCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<AppointmentDto>> Handle(ConfirmPaymentCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Patient)
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_CONFIRM");
+            throw new ForbiddenException("Only patients can confirm payments.");
 
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .Include(x => x.Specialty)
             .FirstOrDefaultAsync(x => x.Id == request.DoctorProfileId && x.Status == DoctorStatus.Approved, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         // Idempotency: if the webhook already created the appointment for this
         // Paymob order, return it instead of erroring — the user paid, we owe them
@@ -64,7 +64,7 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
                 existing.PaymentStatus.ToString(),
                 existing.PaymentMethod?.ToString(),
                 existing.AmountPaid);
-            return Result.Success(existingDto, "PAYMENT_ALREADY_CONFIRMED");
+            return ApiResponse<AppointmentDto>.Ok(existingDto, "Payment already confirmed.");
         }
 
         // Verify slot is still available
@@ -74,7 +74,7 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
                  x.Status != AppointmentStatus.Cancelled,
             cancellationToken);
         if (overlapping)
-            throw new BadRequestException("SLOT_NO_LONGER_AVAILABLE");
+            throw new BadRequestException("The selected slot is no longer available. A refund will be initiated.");
 
         // Calculate fees
         var consultationFee = doctorProfile.ConsultationFee;
@@ -176,6 +176,6 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
             appointment.PaymentMethod?.ToString(),
             appointment.AmountPaid);
 
-        return Result.Success(dto, "PAYMENT_CONFIRMED_SUCCESS");
+        return ApiResponse<AppointmentDto>.Ok(dto, "Payment confirmed. Appointment booked.");
     }
 }

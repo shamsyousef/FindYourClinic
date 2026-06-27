@@ -22,7 +22,7 @@ public class GetMyAvailabilityQueryHandler : IRequestHandler<GetMyAvailabilityQu
         var doctorProfile = await _dbContext.DoctorProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == request.UserId && x.Status == DoctorStatus.Approved, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         var availabilities = await _dbContext.DoctorAvailabilities
             .AsNoTracking()

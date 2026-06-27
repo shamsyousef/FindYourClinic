@@ -1,4 +1,3 @@
-using Ardalis.Result;
 using FindYourClinic.Domain.Common;
 using MediatR;
 

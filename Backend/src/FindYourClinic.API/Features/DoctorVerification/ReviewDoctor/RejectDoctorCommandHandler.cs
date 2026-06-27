@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Constants;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FindYourClinic.API.Features.DoctorVerification.ReviewDoctor;
 
-public class RejectDoctorCommandHandler : IRequestHandler<RejectDoctorCommand, Result>
+public class RejectDoctorCommandHandler : IRequestHandler<RejectDoctorCommand, ApiResponse<object>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IEmailService _emailService;
@@ -22,24 +22,24 @@ public class RejectDoctorCommandHandler : IRequestHandler<RejectDoctorCommand, R
         ApplicationDbContext dbContext,
         IEmailService emailService,
         INotificationService notificationService,
-        ILogger<RejectDoctorCommandHandler> _logger)
+        ILogger<RejectDoctorCommandHandler> logger)
     {
         _dbContext = dbContext;
         _emailService = emailService;
         _notificationService = notificationService;
-        this._logger = _logger;
+        _logger = logger;
     }
 
-    public async Task<Result> Handle(RejectDoctorCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(RejectDoctorCommand request, CancellationToken cancellationToken)
     {
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         if (doctorProfile.Status != DoctorStatus.PendingReview)
         {
-            throw new BadRequestException("ONLY_PENDING_DOCTORS_REJECTED");
+            throw new BadRequestException("Only pending doctors can be rejected.");
         }
 
         doctorProfile.Status = DoctorStatus.Rejected;
@@ -80,6 +80,6 @@ public class RejectDoctorCommandHandler : IRequestHandler<RejectDoctorCommand, R
             _logger.LogError(ex, "Failed to send rejection notification to {UserId}", doctorProfile.UserId);
         }
 
-        return Result.Success("DOCTOR_REJECTED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Doctor rejected successfully.");
     }
 }

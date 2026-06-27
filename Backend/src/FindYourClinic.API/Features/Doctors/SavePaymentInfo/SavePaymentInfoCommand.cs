@@ -1,10 +1,10 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Doctors.SavePaymentInfo;
 
-public class SavePaymentInfoCommand : IRequest<Result>
+public class SavePaymentInfoCommand : IRequest<ApiResponse<object>>
 {
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }

@@ -50,7 +50,7 @@ public class GetHealthSummaryQueryHandler : IRequestHandler<GetHealthSummaryQuer
     {
         if (role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_ACCESS_HEALTH_RECORDS");
+            throw new ForbiddenException("Only patients can access health records.");
         }
     }
 }

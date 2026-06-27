@@ -27,8 +27,9 @@ public class GetDoctorDashboardQueryHandler
 
         if (doctorProfile is null)
         {
-            throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            throw new NotFoundException("Doctor profile not found.");
         }
+
         var user = await _dbContext.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
         var doctorName = user?.FirstName ?? "Doctor";
 

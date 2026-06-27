@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Constants;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FindYourClinic.API.Features.DoctorVerification.ReviewDoctor;
 
-public class ApproveDoctorCommandHandler : IRequestHandler<ApproveDoctorCommand, Result>
+public class ApproveDoctorCommandHandler : IRequestHandler<ApproveDoctorCommand, ApiResponse<object>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IEmailService _emailService;
@@ -30,16 +30,16 @@ public class ApproveDoctorCommandHandler : IRequestHandler<ApproveDoctorCommand,
         _logger = logger;
     }
 
-    public async Task<Result> Handle(ApproveDoctorCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(ApproveDoctorCommand request, CancellationToken cancellationToken)
     {
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         if (doctorProfile.Status != DoctorStatus.PendingReview && doctorProfile.Status != DoctorStatus.Rejected)
         {
-            throw new BadRequestException("ONLY_PENDING_OR_REJECTED_DOCTORS_APPROVED");
+            throw new BadRequestException("Only pending or rejected doctors can be approved.");
         }
 
         doctorProfile.Status = DoctorStatus.Approved;
@@ -79,6 +79,6 @@ public class ApproveDoctorCommandHandler : IRequestHandler<ApproveDoctorCommand,
             _logger.LogError(ex, "Failed to send approval notification to {UserId}", doctorProfile.UserId);
         }
 
-        return Result.Success("DOCTOR_APPROVED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Doctor approved successfully.");
     }
 }

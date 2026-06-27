@@ -11,64 +11,51 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Appointments.BookAppointment;
 
-public class BookAppointmentCommandHandler
-    : IRequestHandler<BookAppointmentCommand, ApiResponse<AppointmentDto>>
+public class BookAppointmentCommandHandler : IRequestHandler<BookAppointmentCommand, ApiResponse<AppointmentDto>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly INotificationService _notificationService;
 
-    public BookAppointmentCommandHandler(
-        ApplicationDbContext dbContext,
-        INotificationService notificationService)
+    public BookAppointmentCommandHandler(ApplicationDbContext dbContext, INotificationService notificationService)
     {
         _dbContext = dbContext;
         _notificationService = notificationService;
     }
 
-    public async Task<ApiResponse<AppointmentDto>> Handle(
-        BookAppointmentCommand request,
-        CancellationToken cancellationToken)
+    public async Task<ApiResponse<AppointmentDto>> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_BOOK_APPOINTMENTS");
+            throw new ForbiddenException("Only patients can book appointments.");
         }
 
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .Include(x => x.Specialty)
-            .FirstOrDefaultAsync(
-                x => x.Id == request.DoctorProfileId &&
-                     x.Status == DoctorStatus.Approved &&
-                     x.User.IsActive,
-                cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            .FirstOrDefaultAsync(x => x.Id == request.DoctorProfileId && x.Status == DoctorStatus.Approved && x.User.IsActive, cancellationToken)
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         if (request.ScheduledAt <= DateTime.UtcNow)
         {
-            throw new BadRequestException("APPOINTMENT_MUST_BE_IN_THE_FUTURE");
+            throw new BadRequestException("Appointment must be in the future.");
         }
 
-        if (request.ScheduledAt.Second != 0 ||
-            request.ScheduledAt.Millisecond != 0 ||
-            request.ScheduledAt.Minute % 30 != 0)
+        if (request.ScheduledAt.Second != 0 || request.ScheduledAt.Millisecond != 0 || request.ScheduledAt.Minute % 30 != 0)
         {
-            throw new BadRequestException("APPOINTMENTS_MUST_BE_ON_30_MINUTE_SLOTS");
+            throw new BadRequestException("Appointments must be booked on 30-minute slots.");
         }
 
         var isInsideAvailabilityWindow = await _dbContext.DoctorAvailabilities
             .AsNoTracking()
-            .AnyAsync(x =>
-                x.DoctorProfileId == request.DoctorProfileId &&
-                x.IsActive &&
-                x.DayOfWeek == request.ScheduledAt.DayOfWeek &&
-                x.StartTime <= request.ScheduledAt.TimeOfDay &&
-                request.ScheduledAt.TimeOfDay < x.EndTime,
+            .AnyAsync(x => x.DoctorProfileId == request.DoctorProfileId &&
+                           x.IsActive &&
+                           x.DayOfWeek == request.ScheduledAt.DayOfWeek &&
+                           x.StartTime <= request.ScheduledAt.TimeOfDay &&
+                           request.ScheduledAt.TimeOfDay < x.EndTime,
                 cancellationToken);
-
         if (!isInsideAvailabilityWindow)
         {
-            throw new BadRequestException("SELECTED_TIME_OUTSIDE_AVAILABILITY");
+            throw new BadRequestException("Selected time is outside doctor availability.");
         }
 
         var overlapping = await _dbContext.Appointments.AnyAsync(
@@ -76,10 +63,9 @@ public class BookAppointmentCommandHandler
                  x.ScheduledAt == request.ScheduledAt &&
                  x.Status != AppointmentStatus.Cancelled,
             cancellationToken);
-
         if (overlapping)
         {
-            throw new BadRequestException("SLOT_ALREADY_BOOKED");
+            throw new BadRequestException("The selected slot is already booked.");
         }
 
         var appointment = new Appointment
@@ -87,22 +73,17 @@ public class BookAppointmentCommandHandler
             PatientId = request.UserId,
             DoctorProfileId = request.DoctorProfileId,
             ScheduledAt = request.ScheduledAt,
-            LocationName = string.IsNullOrWhiteSpace(request.LocationName)
-                ? doctorProfile.ClinicName
-                : request.LocationName.Trim(),
+            LocationName = string.IsNullOrWhiteSpace(request.LocationName) ? doctorProfile.ClinicName : request.LocationName.Trim(),
             Status = AppointmentStatus.Scheduled
         };
 
         _dbContext.Appointments.Add(appointment);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // =========================
-        // NOTIFICATION (FIXED)
-        // =========================
         await _notificationService.SendToUserAsync(
             doctorProfile.UserId,
-            "NEW_APPOINTMENT_BOOKED",
-            "NEW_APPOINTMENT_BOOKED_MESSAGE",
+            "New appointment booked",
+            $"A patient booked an appointment on {appointment.ScheduledAt:MMM dd 'at' hh:mm tt}.",
             new Dictionary<string, string>
             {
                 ["type"] = NotificationTypes.AppointmentBooked,
@@ -126,9 +107,6 @@ public class BookAppointmentCommandHandler
             appointment.PaymentMethod?.ToString(),
             appointment.AmountPaid);
 
-        return ApiResponse<AppointmentDto>.Ok(
-            dto,
-            "APPOINTMENT_BOOKED_SUCCESS"
-        );
+        return ApiResponse<AppointmentDto>.Ok(dto, "Appointment booked.");
     }
 }

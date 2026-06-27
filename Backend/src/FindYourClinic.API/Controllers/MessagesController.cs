@@ -401,6 +401,27 @@ public class MessagesController : ControllerBase
         return Ok(ApiResponse<object>.Ok(null, "Conversation marked as read."));
     }
 
+    [HttpDelete("conversations/{id:guid}/messages")]
+    public async Task<IActionResult> ClearMessages([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var userId = UserContext.GetRequiredUserId(User);
+        var conversation = await GetParticipantConversationAsync(id, userId, cancellationToken);
+        
+        var messages = await _dbContext.ChatMessages
+            .Where(x => x.ConversationId == id)
+            .ToListAsync(cancellationToken);
+
+        if (messages.Count > 0)
+        {
+            _dbContext.ChatMessages.RemoveRange(messages);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            await _hubContext.Clients.Group($"conversation:{id}").SendAsync("messagesCleared", id, cancellationToken);
+        }
+
+        return Ok(ApiResponse<object>.Ok(null, "Chat cleared."));
+    }
+
     private async Task<MessageDto> PersistAndBroadcastAsync(
         Conversation conversation,
         Guid senderId,
@@ -512,26 +533,6 @@ public class MessagesController : ControllerBase
         {
             throw new ForbiddenException("You do not have access to this conversation.");
         }
-    }
-    [HttpDelete("conversations/{id:guid}/messages")]
-    public async Task<IActionResult> ClearMessages([FromRoute] Guid id, CancellationToken cancellationToken)
-    {
-        var userId = UserContext.GetRequiredUserId(User);
-        var conversation = await GetParticipantConversationAsync(id, userId, cancellationToken);
-
-        var messages = await _dbContext.ChatMessages
-            .Where(x => x.ConversationId == id)
-            .ToListAsync(cancellationToken);
-
-        if (messages.Count > 0)
-        {
-            _dbContext.ChatMessages.RemoveRange(messages);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            await _hubContext.Clients.Group($"conversation:{id}").SendAsync("messagesCleared", id, cancellationToken);
-        }
-
-        return Ok(ApiResponse<object>.Ok(null, "Chat cleared."));
     }
 
     private async Task EnsureValidAppointmentAsync(Guid patientId, Guid doctorId, CancellationToken cancellationToken)

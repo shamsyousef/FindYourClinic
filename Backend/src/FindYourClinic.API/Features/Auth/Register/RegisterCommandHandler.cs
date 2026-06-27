@@ -30,33 +30,33 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
     {
         if (await _userManager.FindByEmailAsync(request.Email) is not null)
         {
-            return ApiResponse<RegisterResultDto>.Fail("EMAIL_ALREADY_REGISTERED");
+            return ApiResponse<RegisterResultDto>.Fail("Email is already registered.");
         }
 
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
         {
-            return ApiResponse<RegisterResultDto>.Fail("INVALID_ROLE");
+            return ApiResponse<RegisterResultDto>.Fail("Invalid role.");
         }
 
         var user = CreateUser(request, role);
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
-            return ApiResponse<RegisterResultDto>.Fail("REGISTRATION_FAILED", result.Errors.Select(x => x.Description).ToList());
+            return ApiResponse<RegisterResultDto>.Fail("Registration failed.", result.Errors.Select(x => x.Description).ToList());
         }
 
         if (role == UserRole.Doctor)
         {
             if (!request.SpecialtyId.HasValue)
             {
-                return ApiResponse<RegisterResultDto>.Fail("SPECIALTY_REQUIRED_FOR_DOCTORS");
+                return ApiResponse<RegisterResultDto>.Fail("Specialty is required for doctors.");
             }
 
             var specialtyExists = await _dbContext.Specialties
                 .AnyAsync(x => x.Id == request.SpecialtyId.Value && x.IsActive, cancellationToken);
             if (!specialtyExists)
             {
-                return ApiResponse<RegisterResultDto>.Fail("INVALID_SPECIALTY");
+                return ApiResponse<RegisterResultDto>.Fail("Invalid specialty.");
             }
 
             _dbContext.DoctorProfiles.Add(new DoctorProfile
@@ -70,7 +70,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
 
             var pendingToken = _jwtService.GenerateAccessToken(user, isPendingDoctorToken: true);
             return ApiResponse<RegisterResultDto>.Ok(new RegisterResultDto { PendingToken = pendingToken },
-                "ACCOUNT_PENDING_ADMIN_REVIEW");
+                "Account pending admin review. Please upload your documents.");
         }
 
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id);
@@ -91,7 +91,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
             }
         };
 
-        return ApiResponse<RegisterResultDto>.Ok(new RegisterResultDto { Auth = auth }, "REGISTER_SUCCESSFUL");
+        return ApiResponse<RegisterResultDto>.Ok(new RegisterResultDto { Auth = auth }, "Registered successfully.");
     }
 
     private static ApplicationUser CreateUser(RegisterCommand request, UserRole role)

@@ -41,7 +41,7 @@ public class PaymobWebhookHandler
             if (!_paymobService.VerifyHmac(data.ToHmacDictionary(), hmac))
             {
                 _logger.LogWarning("Invalid HMAC for Paymob webhook. Order: {OrderId}", data.OrderId);
-                throw new UnauthorizedException("INVALID_HMAC_SIGNATURE");
+                throw new UnauthorizedException("Invalid HMAC signature.");
             }
         }
         else

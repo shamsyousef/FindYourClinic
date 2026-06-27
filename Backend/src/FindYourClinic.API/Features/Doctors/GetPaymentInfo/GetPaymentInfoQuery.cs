@@ -1,10 +1,10 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Enums;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Doctors.GetPaymentInfo;
 
-public class GetPaymentInfoQuery : IRequest<Result<DoctorPaymentInfoDto?>>
+public class GetPaymentInfoQuery : IRequest<ApiResponse<DoctorPaymentInfoDto>>
 {
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }

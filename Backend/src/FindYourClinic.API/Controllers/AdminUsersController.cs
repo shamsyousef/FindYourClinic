@@ -40,6 +40,7 @@ public class AdminUsersController : ControllerBase
         var result = await _mediator.Send(new GetUserDocumentsQuery(userId), cancellationToken);
         return Ok(result);
     }
+
     [HttpDelete("{userId:guid}")]
     public async Task<IActionResult> DeleteUser([FromRoute] Guid userId, [FromBody] DeleteUserRequest request, CancellationToken cancellationToken)
     {
@@ -47,4 +48,9 @@ public class AdminUsersController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
+}
+
+public class DeleteUserRequest
+{
+    public string Reason { get; set; } = string.Empty;
 }

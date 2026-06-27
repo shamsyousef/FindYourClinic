@@ -9,6 +9,6 @@ public class CreateAvailabilityCommandValidator : AbstractValidator<CreateAvaila
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.StartTime)
             .LessThan(x => x.EndTime)
-            .WithMessage("START_TIME_MUST_BE_BEFORE_END_TIME");
+            .WithMessage("Start time must be before end time.");
     }
 }

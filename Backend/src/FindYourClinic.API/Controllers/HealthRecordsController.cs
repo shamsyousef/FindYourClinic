@@ -7,13 +7,11 @@ using FindYourClinic.API.Features.HealthRecords.GetHealthSummary;
 using FindYourClinic.API.Features.HealthRecords.GetMyRecords;
 using FindYourClinic.API.Features.HealthRecords.GetPatientRecords;
 using FindYourClinic.API.Features.HealthRecords.UpdateHealthRecord;
-using FindYourClinic.API.Localization;
 using FindYourClinic.Domain.Enums;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using FindYourClinic.API.Features.HealthRecords.Shared;
 
 namespace FindYourClinic.API.Controllers;
 
@@ -44,9 +42,8 @@ public class HealthRecordsController : ControllerBase
 
     /// <summary>Create a new health record (patient only).</summary>
     [HttpPost]
-    [Consumes("multipart/form-data")] 
     public async Task<IActionResult> Add([FromForm] CreateHealthRecordRequest request, CancellationToken cancellationToken)
-    { 
+    {
         var result = await _mediator.Send(new CreateHealthRecordCommand
         {
             UserId = UserContext.GetRequiredUserId(User),
@@ -57,9 +54,9 @@ public class HealthRecordsController : ControllerBase
             Unit = request.Unit,
             RecordedAt = request.RecordedAt,
             Notes = request.Notes,
-            Attachment = request.Attachment 
+            Attachment = request.Attachment
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     /// <summary>Update an existing health record (patient only).</summary>
@@ -77,9 +74,8 @@ public class HealthRecordsController : ControllerBase
             Unit = request.Unit,
             RecordedAt = request.RecordedAt,
             Notes = request.Notes
-            
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     /// <summary>Get a single health record by ID (patient only).</summary>
@@ -105,7 +101,7 @@ public class HealthRecordsController : ControllerBase
             UserId = UserContext.GetRequiredUserId(User),
             Role = UserContext.GetRequiredRole(User)
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     /// <summary>Get vitals summary (patient only).</summary>
@@ -146,7 +142,26 @@ public class HealthRecordsController : ControllerBase
         return Ok(result);
     }
 
- 
+    // ─── Request DTOs ───
 
-   
+    public sealed class CreateHealthRecordRequest
+    {
+        public string Title { get; set; } = string.Empty;
+        public HealthRecordType Type { get; set; }
+        public string? Value { get; set; }
+        public string? Unit { get; set; }
+        public DateTime? RecordedAt { get; set; }
+        public string? Notes { get; set; }
+        public IFormFile? Attachment { get; set; }
+    }
+
+    public sealed class UpdateHealthRecordRequest
+    {
+        public string Title { get; set; } = string.Empty;
+        public HealthRecordType Type { get; set; }
+        public string? Value { get; set; }
+        public string? Unit { get; set; }
+        public DateTime? RecordedAt { get; set; }
+        public string? Notes { get; set; }
+    }
 }

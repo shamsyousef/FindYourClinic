@@ -1,6 +1,5 @@
 using FindYourClinic.API.Features.Reviews.DeleteReview;
 using FindYourClinic.API.Features.Reviews.GetAllReviews;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +29,6 @@ public class AdminReviewsController : ControllerBase
     public async Task<IActionResult> DeleteReview([FromRoute] Guid reviewId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new DeleteReviewCommand { ReviewId = reviewId }, cancellationToken);
-        return this.WriteFromResult(result);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }

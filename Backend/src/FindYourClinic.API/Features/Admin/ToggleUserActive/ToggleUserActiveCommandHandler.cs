@@ -19,7 +19,7 @@ public class ToggleUserActiveCommandHandler : IRequestHandler<ToggleUserActiveCo
     {
         var user = await _dbContext.Users
             .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("USER_NOT_FOUND");
+            ?? throw new NotFoundException("User not found.");
 
         user.IsActive = !user.IsActive;
         await _dbContext.SaveChangesAsync(cancellationToken);

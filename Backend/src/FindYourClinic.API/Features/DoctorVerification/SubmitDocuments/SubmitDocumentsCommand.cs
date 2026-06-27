@@ -1,10 +1,10 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 
 namespace FindYourClinic.API.Features.DoctorVerification.SubmitDocuments;
 
-public class SubmitDocumentsCommand : IRequest<Result<List<UploadedDoctorDocumentDto>>>
+public class SubmitDocumentsCommand : IRequest<ApiResponse<List<UploadedDoctorDocumentDto>>>
 {
     public Guid DoctorUserId { get; set; }
     public List<IFormFile> Files { get; set; } = [];

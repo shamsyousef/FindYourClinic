@@ -1,4 +1,4 @@
-﻿using FindYourClinic.Domain.Common;
+using FindYourClinic.Domain.Common;
 using MediatR;
 
 namespace FindYourClinic.API.Features.Admin.DeleteUser;

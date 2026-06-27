@@ -12,14 +12,14 @@ public class SubmitDocumentsCommandValidator : AbstractValidator<SubmitDocuments
         RuleFor(x => x.DoctorUserId).NotEmpty();
         RuleFor(x => x.Files)
             .NotEmpty()
-            .Must(f => f.Count <= 5).WithMessage("MAXIMUM_5_FILES_ALLOWED");
+            .Must(f => f.Count <= 5).WithMessage("Maximum 5 files allowed.");
         RuleFor(x => x.DocumentTypes).NotEmpty();
         RuleFor(x => x)
             .Must(x => x.Files.Count == x.DocumentTypes.Count)
-            .WithMessage("FILES_COUNT_MISMATCH");
+            .WithMessage("Files count must match documentTypes count.");
         RuleForEach(x => x.Files)
-            .Must(f => f.Length <= MaxFileBytes).WithMessage("FILE_UNDER_10MB")
+            .Must(f => f.Length <= MaxFileBytes).WithMessage("Each file must be under 10 MB.")
             .Must(f => AllowedExtensions.Contains(Path.GetExtension(f.FileName).ToLowerInvariant()))
-            .WithMessage("ONLY_JPG_PNG_PDF_ACCEPTED");
+            .WithMessage("Only JPG, PNG, and PDF files are accepted.");
     }
 }

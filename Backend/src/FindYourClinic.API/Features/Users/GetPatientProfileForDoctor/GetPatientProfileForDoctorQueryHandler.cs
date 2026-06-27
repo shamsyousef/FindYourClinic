@@ -28,12 +28,12 @@ public class GetPatientProfileForDoctorQueryHandler
         CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Doctor)
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_VIEW_PATIENT_PROFILES");
+            throw new ForbiddenException("Only doctors can view patient profiles.");
 
         var doctorProfile = await _dbContext.DoctorProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(dp => dp.UserId == request.DoctorUserId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         var hasRelationship = await _dbContext.Appointments
             .AnyAsync(
@@ -41,12 +41,12 @@ public class GetPatientProfileForDoctorQueryHandler
                 cancellationToken);
 
         if (!hasRelationship)
-            throw new ForbiddenException("ONLY_VIEW_APPOINTMENT_PATIENTS");
+            throw new ForbiddenException("You can only view profiles of patients you have appointments with.");
 
         var patient = await _userManager.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == request.PatientId, cancellationToken)
-            ?? throw new NotFoundException("PATIENT_NOT_FOUND");
+            ?? throw new NotFoundException("Patient not found.");
 
         return ApiResponse<UserProfileDto>.Ok(new UserProfileDto
         {

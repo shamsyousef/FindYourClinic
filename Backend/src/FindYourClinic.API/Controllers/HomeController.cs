@@ -97,6 +97,7 @@ public class HomeController : ControllerBase
             .OrderBy(x => x.Name)
             .Select(x => new SpecialtySummaryDto(x.Id, x.Name, x.IconUrl))
             .ToListAsync(cancellationToken);
+
         var user = await _dbContext.Users.FindAsync(new object[] { userId }, cancellationToken);
         var patientName = user?.FirstName ?? "Patient";
 

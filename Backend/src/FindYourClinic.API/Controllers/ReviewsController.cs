@@ -1,7 +1,6 @@
 using FindYourClinic.API.Common;
 using FindYourClinic.API.Features.Reviews.AddReview;
 using FindYourClinic.API.Features.Reviews.GetReviews;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +41,7 @@ public class ReviewsController : ControllerBase
             Rating = request.Rating,
             Comment = request.Comment
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     public sealed class AddReviewRequest

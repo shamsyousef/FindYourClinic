@@ -23,24 +23,24 @@ public class GetTopRatedDoctorsQueryHandler : IRequestHandler<GetTopRatedDoctors
         var cursor = DecodeTopRatedCursor(query.Cursor);
 
         var rankedQuery = _dbContext.DoctorProfiles
-         .AsNoTracking()
-         .Where(x => x.Status == DoctorStatus.Approved && x.User.IsActive && x.Specialty.IsActive)
-         .Select(doctor => new TopRatedDoctorProjection
-         {
-             DoctorId = doctor.UserId,
-             DoctorProfileId = doctor.Id,
-             FullName = (doctor.User.FirstName + " " + doctor.User.LastName).Trim(),
-             Specialty = doctor.Specialty.Name,
-             ProfileImageUrl = doctor.User.ProfileImageUrl,
-             ConsultationFee = doctor.ConsultationFee,
-             Latitude = doctor.Latitude,
-             Longitude = doctor.Longitude,
-             AvgRating = _dbContext.DoctorReviews
-                 .Where(r => r.DoctorProfileId == doctor.Id)
-                 .Average(r => (double?)r.Rating) ?? 0,
-             ReviewsCount = _dbContext.DoctorReviews
-                 .Count(r => r.DoctorProfileId == doctor.Id)
-         });
+            .AsNoTracking()
+            .Where(x => x.Status == DoctorStatus.Approved && x.User.IsActive && x.Specialty.IsActive)
+            .Select(doctor => new TopRatedDoctorProjection
+            {
+                DoctorId = doctor.UserId,
+                DoctorProfileId = doctor.Id,
+                FullName = (doctor.User.FirstName + " " + doctor.User.LastName).Trim(),
+                Specialty = doctor.Specialty.Name,
+                ProfileImageUrl = doctor.User.ProfileImageUrl,
+                ConsultationFee = doctor.ConsultationFee,
+                Latitude = doctor.Latitude,
+                Longitude = doctor.Longitude,
+                AvgRating = _dbContext.DoctorReviews
+                    .Where(r => r.DoctorProfileId == doctor.Id)
+                    .Average(r => (double?)r.Rating) ?? 0,
+                ReviewsCount = _dbContext.DoctorReviews
+                    .Count(r => r.DoctorProfileId == doctor.Id)
+            });
 
         if (cursor is not null)
         {

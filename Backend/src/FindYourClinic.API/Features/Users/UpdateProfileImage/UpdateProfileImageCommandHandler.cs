@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Interfaces;
 using MediatR;
@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FindYourClinic.API.Features.Users.UpdateProfileImage;
 
-public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileImageCommand, Result<string>>
+public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileImageCommand, ApiResponse<string>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ICloudinaryService _cloudinaryService;
@@ -19,12 +19,12 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         _cloudinaryService = cloudinaryService;
     }
 
-    public async Task<Result<string>> Handle(UpdateProfileImageCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<string>> Handle(UpdateProfileImageCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId.ToString());
         if (user == null)
         {
-            return Result.NotFound("USER_NOT_FOUND");
+            return ApiResponse<string>.Fail("User not found.");
         }
 
         try
@@ -53,14 +53,14 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
-                return Result.Error("FAILED_TO_UPDATE_PROFILE_IMAGE");
+                return ApiResponse<string>.Fail("Failed to update user profile image.", result.Errors.Select(e => e.Description).ToList());
             }
 
-            return Result.Success(user.ProfileImageUrl, "PROFILE_IMAGE_UPDATED_SUCCESS");
+            return ApiResponse<string>.Ok(user.ProfileImageUrl, "Profile image updated successfully.");
         }
-        catch
+        catch (Exception ex)
         {
-            return Result.Error("IMAGE_UPLOAD_FAILED");
+            return ApiResponse<string>.Fail($"Image upload failed: {ex.Message}");
         }
     }
 }

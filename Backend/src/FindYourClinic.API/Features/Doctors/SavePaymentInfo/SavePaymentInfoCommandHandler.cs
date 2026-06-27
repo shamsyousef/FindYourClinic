@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Features.Doctors.SavePaymentInfo;
 
-public class SavePaymentInfoCommandHandler : IRequestHandler<SavePaymentInfoCommand, Result>
+public class SavePaymentInfoCommandHandler : IRequestHandler<SavePaymentInfoCommand, ApiResponse<object>>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -17,15 +17,15 @@ public class SavePaymentInfoCommandHandler : IRequestHandler<SavePaymentInfoComm
         _dbContext = dbContext;
     }
 
-    public async Task<Result> Handle(SavePaymentInfoCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<object>> Handle(SavePaymentInfoCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Doctor)
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_SAVE_PAYMENT_INFO");
+            throw new ForbiddenException("Only doctors can update payment info.");
 
         var profile = await _dbContext.DoctorProfiles
             .Include(x => x.PaymentInfo)
             .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_PROFILE_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor profile not found.");
 
         if (profile.PaymentInfo is null)
         {
@@ -46,6 +46,6 @@ public class SavePaymentInfoCommandHandler : IRequestHandler<SavePaymentInfoComm
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success("PAYMENT_INFO_SAVED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Payment info saved.");
     }
 }

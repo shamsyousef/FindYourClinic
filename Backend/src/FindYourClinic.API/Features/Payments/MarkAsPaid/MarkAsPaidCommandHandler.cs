@@ -1,4 +1,4 @@
-using Ardalis.Result;
+using FindYourClinic.Domain.Common;
 using FindYourClinic.Domain.Entities;
 using FindYourClinic.Domain.Enums;
 using FindYourClinic.Domain.Exceptions;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FindYourClinic.API.Controllers;
 
-public class MarkAsPaidCommandHandler : IRequestHandler<MarkAsPaidCommand, Result<string>>
+public class MarkAsPaidCommandHandler : IRequestHandler<MarkAsPaidCommand, ApiResponse<string>>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IConfiguration _configuration;
@@ -19,24 +19,24 @@ public class MarkAsPaidCommandHandler : IRequestHandler<MarkAsPaidCommand, Resul
         _configuration = configuration;
     }
 
-    public async Task<Result<string>> Handle(MarkAsPaidCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<string>> Handle(MarkAsPaidCommand request, CancellationToken cancellationToken)
     {
         if (request.Role != UserRole.Doctor)
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_MARK_PAID");
+            throw new ForbiddenException("Only doctors can mark appointments as paid.");
 
         var appointment = await _dbContext.Appointments
             .Include(x => x.DoctorProfile)
             .FirstOrDefaultAsync(x => x.Id == request.AppointmentId, cancellationToken)
-            ?? throw new NotFoundException("APPOINTMENT_NOT_FOUND");
+            ?? throw new NotFoundException("Appointment not found.");
 
         if (appointment.DoctorProfile.UserId != request.UserId)
-            throw new ForbiddenException("MANAGE_OWN_APPOINTMENTS_ONLY");
+            throw new ForbiddenException("You can only manage your own appointments.");
 
         if (appointment.PaymentMethod != PaymentMethod.Cash)
-            throw new BadRequestException("ONLY_CASH_APPOINTMENTS_MARKED_PAID");
+            throw new BadRequestException("Only cash appointments can be marked as paid.");
 
         if (appointment.PaymentStatus == PaymentStatus.Paid)
-            throw new BadRequestException("APPOINTMENT_ALREADY_MARKED_PAID");
+            throw new BadRequestException("Appointment is already marked as paid.");
 
         // Calculate fees
         var consultationFee = appointment.DoctorProfile.ConsultationFee;
@@ -84,6 +84,6 @@ public class MarkAsPaidCommandHandler : IRequestHandler<MarkAsPaidCommand, Resul
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success("Paid", "APPOINTMENT_MARKED_PAID_SUCCESS");
+        return ApiResponse<string>.Ok("Paid", "Appointment marked as paid.");
     }
 }

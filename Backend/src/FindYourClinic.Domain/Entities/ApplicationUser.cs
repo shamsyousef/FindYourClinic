@@ -22,6 +22,7 @@ public class ApplicationUser : AuditableIdentityUser
     public string? Address { get; set; }
     public string? EmergencyContactName { get; set; }
     public string? EmergencyContactPhone { get; set; }
+    public string PreferredLanguage { get; set; } = "en";
 
     public DoctorProfile? DoctorProfile { get; set; }
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

@@ -24,22 +24,22 @@ public class ConfirmAppointmentCommandHandler : IRequestHandler<ConfirmAppointme
     {
         if (request.Role != UserRole.Doctor)
         {
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_CONFIRM_APPOINTMENTS");
+            throw new ForbiddenException("Only doctors can confirm appointments.");
         }
 
         var appointment = await _dbContext.Appointments
             .Include(x => x.DoctorProfile)
             .FirstOrDefaultAsync(x => x.Id == request.AppointmentId, cancellationToken)
-            ?? throw new NotFoundException("APPOINTMENT_NOT_FOUND");
+            ?? throw new NotFoundException("Appointment not found.");
 
         if (appointment.DoctorProfile.UserId != request.UserId)
         {
-            throw new ForbiddenException("FORBIDDEN_TO_CONFIRM_APPOINTMENT");
+            throw new ForbiddenException("You cannot confirm this appointment.");
         }
 
         if (appointment.Status != AppointmentStatus.Scheduled && appointment.Status != AppointmentStatus.PendingPayment)
         {
-            throw new BadRequestException("ONLY_SCHEDULED_OR_PENDING_PAYMENT_APPOINTMENTS_CAN_BE_CONFIRMED");
+            throw new BadRequestException("Only scheduled or pending-payment appointments can be confirmed.");
         }
 
         // Doctor approval transitions both flows directly to Confirmed:
@@ -51,8 +51,8 @@ public class ConfirmAppointmentCommandHandler : IRequestHandler<ConfirmAppointme
 
         await _notificationService.SendToUserAsync(
             appointment.PatientId,
-            "APPOINTMENT_CONFIRMED",
-            "APPOINTMENT_CONFIRMED_MESSAGE",
+            "Appointment confirmed",
+            $"Your appointment is confirmed for {appointment.ScheduledAt:MMM dd 'at' hh:mm tt}.",
             new Dictionary<string, string>
             {
                 ["type"] = NotificationTypes.AppointmentConfirmed,
@@ -60,6 +60,6 @@ public class ConfirmAppointmentCommandHandler : IRequestHandler<ConfirmAppointme
             },
             cancellationToken);
 
-        return ApiResponse<object>.Ok(null, "APPOINTMENT_CONFIRMED");
+        return ApiResponse<object>.Ok(null, "Appointment confirmed.");
     }
 }

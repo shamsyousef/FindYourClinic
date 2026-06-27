@@ -10,6 +10,6 @@ public class GoogleLoginCommandValidator : AbstractValidator<GoogleLoginCommand>
         RuleFor(x => x.IdToken).NotEmpty();
         RuleFor(x => x.Role)
             .Must(role => string.IsNullOrWhiteSpace(role) || Enum.TryParse<UserRole>(role, true, out _))
-            .WithMessage("INVALID_ROLE");
+            .WithMessage("Role must be Patient or Doctor.");
     }
 }

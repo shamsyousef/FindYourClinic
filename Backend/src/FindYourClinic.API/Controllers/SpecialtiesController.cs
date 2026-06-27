@@ -2,7 +2,6 @@ using FindYourClinic.API.Features.Specialties.CreateSpecialty;
 using FindYourClinic.API.Features.Specialties.DeleteSpecialty;
 using FindYourClinic.API.Features.Specialties.GetActiveSpecialties;
 using FindYourClinic.API.Features.Specialties.UpdateSpecialty;
-using FindYourClinic.API.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -37,7 +36,7 @@ public class SpecialtiesController : ControllerBase
             Name = request.Name,
             IconUrl = request.IconUrl
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpPut("{id:guid}")]
@@ -51,7 +50,7 @@ public class SpecialtiesController : ControllerBase
             IconUrl = request.IconUrl,
             IsActive = request.IsActive
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     [HttpDelete("{id:guid}")]
@@ -62,7 +61,7 @@ public class SpecialtiesController : ControllerBase
         {
             SpecialtyId = id
         }, cancellationToken);
-        return this.WriteFromResult(result);
+        return Ok(result);
     }
 
     public sealed class UpsertSpecialtyRequest

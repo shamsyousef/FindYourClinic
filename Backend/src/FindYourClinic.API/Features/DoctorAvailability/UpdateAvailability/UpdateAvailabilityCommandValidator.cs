@@ -6,14 +6,10 @@ public class UpdateAvailabilityCommandValidator : AbstractValidator<UpdateAvaila
 {
     public UpdateAvailabilityCommandValidator()
     {
-        RuleFor(x => x.AvailabilityId)
-            .NotEmpty();
-
-        RuleFor(x => x.UserId)
-            .NotEmpty();
-
+        RuleFor(x => x.AvailabilityId).NotEmpty();
+        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.StartTime)
             .LessThan(x => x.EndTime)
-            .WithMessage("START_TIME_BEFORE_END_TIME_REQUIRED");
+            .WithMessage("Start time must be before end time.");
     }
 }

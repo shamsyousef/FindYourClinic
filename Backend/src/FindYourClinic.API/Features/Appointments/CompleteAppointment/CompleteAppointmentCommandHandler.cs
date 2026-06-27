@@ -24,22 +24,22 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
     {
         if (request.Role != UserRole.Doctor)
         {
-            throw new ForbiddenException("ONLY_DOCTORS_CAN_COMPLETE_APPOINTMENTS");
+            throw new ForbiddenException("Only doctors can complete appointments.");
         }
 
         var appointment = await _dbContext.Appointments
             .Include(x => x.DoctorProfile)
             .FirstOrDefaultAsync(x => x.Id == request.AppointmentId, cancellationToken)
-            ?? throw new NotFoundException("APPOINTMENT_NOT_FOUND");
+            ?? throw new NotFoundException("Appointment not found.");
 
         if (appointment.DoctorProfile.UserId != request.UserId)
         {
-            throw new ForbiddenException("FORBIDDEN_TO_COMPLETE_APPOINTMENT");
+            throw new ForbiddenException("You cannot complete this appointment.");
         }
 
         if (appointment.Status != AppointmentStatus.Confirmed)
         {
-            throw new BadRequestException("ONLY_CONFIRMED_APPOINTMENTS_CAN_BE_COMPLETED");
+            throw new BadRequestException("Only confirmed appointments can be completed.");
         }
 
         appointment.Status = AppointmentStatus.Completed;
@@ -47,8 +47,8 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
 
         await _notificationService.SendToUserAsync(
             appointment.PatientId,
-            "APPOINTMENT_COMPLETED",
-            "APPOINTMENT_COMPLETED_MESSAGE",
+            "Appointment completed",
+            "Your appointment was marked as completed.",
             new Dictionary<string, string>
             {
                 ["type"] = NotificationTypes.AppointmentCompleted,
@@ -56,6 +56,6 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
             },
             cancellationToken);
 
-        return ApiResponse<object>.Ok(null, "APPOINTMENT_COMPLETED");
+        return ApiResponse<object>.Ok(null, "Appointment marked as completed.");
     }
 }

@@ -20,6 +20,8 @@ public class ProcessVoiceCommandHandler
         - navigate_ai_chat            → Open the AI health assistant chat
         - navigate_notifications      → Open the notifications list
         - navigate_health_records     → Open the health records screen
+        - navigate_conversations      → Open the patient's messages and chats with doctors
+        - navigate_edit_profile       → Open the screen to edit the patient's profile
         - book_appointment            → Book a new appointment. When the current screen is "doctor_profile" the app books the doctor's next available slot directly as a cash-in-clinic appointment — return book_appointment with a brief confirmation like "Booking the next available slot.". Phrases that map here include "book", "book appointment", "book this doctor", "book in cash", "make a cash appointment", "schedule appointment". (parameters: {"doctorName": "<optional>", "specialty": "<optional>"})
         - read_next_appointment       → Speak the patient's next upcoming appointment time aloud
         - read_all_upcoming_appointments → Speak all upcoming appointments aloud
@@ -28,6 +30,8 @@ public class ProcessVoiceCommandHandler
         - go_back                     → Navigate back / pop the current screen
         - help                        → Speak the list of supported commands
         - cancel                      → Cancel / stop the current voice interaction
+        - confirm                     → Confirm an action (e.g. "yes", "confirm", "نعم", "تأكيد")
+        - deny                        → Deny an action (e.g. "no", "deny", "لا", "رفض")
         - unknown                     → The transcript does not map to any supported intent
 
         Rules:
@@ -39,11 +43,12 @@ public class ProcessVoiceCommandHandler
              "spokenResponse": "<short natural sentence to speak to the user>"
            }
         3. spokenResponse must be a single short sentence (max 25 words) suitable for text-to-speech.
-        4. parameters must always be a JSON object (use {} when there are no parameters).
-        5. If the transcript is empty, gibberish, or unrelated, return intent="unknown" with an apologetic spokenResponse that suggests saying "help".
-        6. The patient is BLIND — be warm and clear. Confirm the action you understood (e.g. "Opening your appointments").
-        7. If a screen context is provided and the user says "read this screen" or similar, return read_screen.
-        8. For search_doctor or book_appointment, if the user mentions a specialty (cardiologist, dentist, etc.) or doctor name, put it in parameters.
+        4. CRITICAL: Detect the language of the transcript. Your spokenResponse MUST be in the EXACT SAME LANGUAGE as the transcript (either Arabic or English).
+        5. parameters must always be a JSON object (use {} when there are no parameters).
+        6. If the transcript is empty, gibberish, or unrelated, return intent="unknown" with an apologetic spokenResponse in the appropriate language that suggests saying "help".
+        7. The patient is BLIND — be warm and clear. Confirm the action you understood.
+        8. If a screen context is provided and the user says "read this screen" or similar, return read_screen.
+        9. For search_doctor or book_appointment, if the user mentions a specialty (cardiologist, طبيب قلب, etc.) or doctor name, put it in parameters.
         """;
 
     private readonly IGeminiService _geminiService;

@@ -10,5 +10,4 @@ public class GetHealthRecordByIdQuery : IRequest<ApiResponse<HealthRecordDto>>
     public Guid RecordId { get; set; }
     public Guid UserId { get; set; }
     public UserRole Role { get; set; }
-   
 }

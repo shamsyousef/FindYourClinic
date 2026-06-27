@@ -44,7 +44,8 @@ public class AnalyzeSymptomsCommandHandler : IRequestHandler<AnalyzeSymptomsComm
             Pick the "specialistType" value EXACTLY (case and spelling) from this allowed list — no other values are acceptable:
             {{specialtyOptions}}
 
-            Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
+            Respond ONLY with valid JSON in this exact format (no markdown, no explanation).
+            IMPORTANT: Keep the JSON keys exactly as shown (in English). Translate the values of "condition" and "recommendations" to the language requested by the system prompt (e.g., Arabic if requested). The "severity" value MUST be exactly one of: "mild", "moderate", "severe" (do not translate "severity" values).
             {
               "condition": "brief condition name",
               "severity": "mild|moderate|severe",
@@ -54,7 +55,7 @@ public class AnalyzeSymptomsCommandHandler : IRequestHandler<AnalyzeSymptomsComm
             """;
 
         var response = await _geminiService.GenerateResponseAsync(
-            new List<(string role, string content)> { ("user", prompt) });
+            new List<(string role, string content)> { ("user", prompt) }, language: request.Language);
 
         try
         {

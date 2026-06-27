@@ -24,9 +24,9 @@ public class GetHealthRecordByIdQueryHandler : IRequestHandler<GetHealthRecordBy
         var record = await _dbContext.HealthRecords
             .AsNoTracking()
             .Where(x => x.Id == request.RecordId && x.PatientId == request.UserId)
-            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.Unit, x.RecordedAt, x.Notes,x.FileUrl))
+            .Select(x => new HealthRecordDto(x.Id, x.Title, x.Type.ToString(), x.Value, x.Unit, x.RecordedAt, x.Notes, x.FileUrl))
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("HEALTH_RECORD_NOT_FOUND");
+            ?? throw new NotFoundException("Health record not found.");
 
         return ApiResponse<HealthRecordDto>.Ok(record);
     }
@@ -35,7 +35,7 @@ public class GetHealthRecordByIdQueryHandler : IRequestHandler<GetHealthRecordBy
     {
         if (role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_ACCESS_HEALTH_RECORDS");
+            throw new ForbiddenException("Only patients can access health records.");
         }
     }
 }

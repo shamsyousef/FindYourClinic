@@ -28,7 +28,7 @@ public class AiHealthController : ControllerBase
     public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request, CancellationToken cancellationToken)
     {
         var userId = UserContext.GetRequiredUserId(User).ToString();
-        var result = await _mediator.Send(new SendMessageCommand(userId, request.Content), cancellationToken);
+        var result = await _mediator.Send(new SendMessageCommand(userId, request.Content, request.Language ?? "en"), cancellationToken);
         return Ok(ApiResponse<SendMessageResult>.Ok(result));
     }
 
@@ -70,6 +70,7 @@ public class AiHealthController : ControllerBase
     public sealed class SendMessageRequest
     {
         public string Content { get; set; } = string.Empty;
+        public string? Language { get; set; } = "en";
     }
 
     public sealed class VoiceCommandRequest

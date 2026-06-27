@@ -40,10 +40,10 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Sen
             .ToListAsync(cancellationToken);
 
         var conversationHistory = history
-            .Select(m => (role: m.Role == "assistant" ? "model" : m.Role, content: m.Content))
+            .Select(h => (h.Role, h.Content))
             .ToList();
 
-        var assistantContent = await _geminiService.GenerateResponseAsync(conversationHistory);
+        var assistantContent = await _geminiService.GenerateResponseAsync(conversationHistory, language: request.Language);
 
         var assistantMessage = new AiChatMessage
         {

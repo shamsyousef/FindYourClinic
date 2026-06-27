@@ -21,7 +21,7 @@ public class GetMyAppointmentsQueryHandler : IRequestHandler<GetMyAppointmentsQu
     {
         if (request.Role != UserRole.Patient)
         {
-            throw new ForbiddenException("ONLY_PATIENTS_CAN_ACCESS_THIS_ENDPOINT");
+            throw new ForbiddenException("Only patients can access this endpoint.");
         }
 
         var items = await _dbContext.Appointments

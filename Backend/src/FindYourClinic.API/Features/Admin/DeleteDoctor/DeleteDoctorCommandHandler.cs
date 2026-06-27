@@ -34,7 +34,7 @@ public class DeleteDoctorCommandHandler : IRequestHandler<DeleteDoctorCommand, A
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         var user = doctorProfile.User;
 
@@ -84,6 +84,6 @@ public class DeleteDoctorCommandHandler : IRequestHandler<DeleteDoctorCommand, A
         _dbContext.Users.Remove(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ApiResponse<object>.Ok(null, "DOCTOR_ACCOUNT_DELETED_SUCCESS");
+        return ApiResponse<object>.Ok(null, "Doctor account deleted successfully.");
     }
 }

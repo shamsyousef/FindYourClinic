@@ -34,7 +34,7 @@ public class ToggleDoctorActiveCommandHandler : IRequestHandler<ToggleDoctorActi
         var doctorProfile = await _dbContext.DoctorProfiles
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         doctorProfile.User.IsActive = !doctorProfile.User.IsActive;
         var isNowActive = doctorProfile.User.IsActive;

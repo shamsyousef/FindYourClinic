@@ -25,33 +25,33 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
         var appointment = await _dbContext.Appointments
             .Include(x => x.DoctorProfile)
             .FirstOrDefaultAsync(x => x.Id == request.AppointmentId, cancellationToken)
-            ?? throw new NotFoundException("APPOINTMENT_NOT_FOUND");
+            ?? throw new NotFoundException("Appointment not found.");
 
         if (request.Role == UserRole.Patient && appointment.PatientId != request.UserId)
         {
-            throw new ForbiddenException("FORBIDDEN_TO_CANCEL_APPOINTMENT");
+            throw new ForbiddenException("You cannot cancel this appointment.");
         }
 
         if (request.Role == UserRole.Doctor && appointment.DoctorProfile.UserId != request.UserId)
         {
-            throw new ForbiddenException("FORBIDDEN_TO_CANCEL_APPOINTMENT");
+            throw new ForbiddenException("You cannot cancel this appointment.");
         }
 
         if (appointment.Status == AppointmentStatus.Completed)
         {
-            throw new BadRequestException("COMPLETED_APPOINTMENTS_CANNOT_BE_CANCELLED");
+            throw new BadRequestException("Completed appointments cannot be cancelled.");
         }
 
         if (appointment.Status == AppointmentStatus.Cancelled)
         {
-            throw new BadRequestException("APPOINTMENT_ALREADY_CANCELLED");
+            throw new BadRequestException("Appointment is already cancelled.");
         }
 
         // PendingPayment (cash) can be cancelled without time restriction
         if (appointment.Status != AppointmentStatus.PendingPayment &&
             appointment.ScheduledAt <= DateTime.UtcNow.AddHours(24))
         {
-            throw new BadRequestException("CANNOT_CANCEL_WITHIN_24_HOURS");
+            throw new BadRequestException("Appointments cannot be cancelled within 24 hours of the scheduled time.");
         }
 
         appointment.Status = AppointmentStatus.Cancelled;
@@ -95,13 +95,13 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
         }
         else
         {
-            throw new ForbiddenException("ONLY_PATIENT_OR_DOCTOR_CAN_CANCEL_APPOINTMENTS");
+            throw new ForbiddenException("Only patient or doctor can cancel appointments.");
         }
 
         await _notificationService.SendToUserAsync(
             targetUserId,
-            "APPOINTMENT_CANCELLED",
-            "APPOINTMENT_CANCELLED_MESSAGE",
+            "Appointment cancelled",
+            "An appointment has been cancelled. Please check details in the app.",
             new Dictionary<string, string>
             {
                 ["type"] = NotificationTypes.AppointmentCancelled,
@@ -109,6 +109,6 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
             },
             cancellationToken);
 
-        return ApiResponse<object>.Ok(null, "APPOINTMENT_CANCELLED");
+        return ApiResponse<object>.Ok(null, "Appointment cancelled.");
     }
 }

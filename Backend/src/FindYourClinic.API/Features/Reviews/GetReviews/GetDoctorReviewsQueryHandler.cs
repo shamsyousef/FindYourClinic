@@ -22,7 +22,7 @@ public class GetDoctorReviewsQueryHandler : IRequestHandler<GetDoctorReviewsQuer
         var doctorProfile = await _dbContext.DoctorProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == request.DoctorId && x.Status == DoctorStatus.Approved, cancellationToken)
-            ?? throw new NotFoundException("DOCTOR_NOT_FOUND");
+            ?? throw new NotFoundException("Doctor not found.");
 
         var reviews = await _dbContext.DoctorReviews
             .AsNoTracking()
