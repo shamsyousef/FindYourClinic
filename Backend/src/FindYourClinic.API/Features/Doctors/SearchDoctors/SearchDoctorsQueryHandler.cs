@@ -121,7 +121,10 @@ public class SearchDoctorsQueryHandler : IRequestHandler<SearchDoctorsQuery, Api
             // Sort in memory
             all = query.SortBy?.ToLowerInvariant() switch
             {
-                "price" => all.OrderBy(x => x.ConsultationFee).ToList(),
+                "fee_asc" => all.OrderBy(x => x.ConsultationFee).ToList(),
+                "fee_desc" => all.OrderByDescending(x => x.ConsultationFee).ToList(),
+                "experience" => all.OrderByDescending(x => x.ExperienceYears).ThenByDescending(x => x.AvgRating).ToList(),
+                "rating" => all.OrderByDescending(x => x.AvgRating).ThenBy(x => x.ConsultationFee).ToList(),
                 "distance" when hasGeo => all.OrderBy(x => x.DistanceKm ?? double.MaxValue).ToList(),
                 _ => all.OrderByDescending(x => x.AvgRating).ThenBy(x => x.ConsultationFee).ToList()
             };
@@ -134,7 +137,10 @@ public class SearchDoctorsQueryHandler : IRequestHandler<SearchDoctorsQuery, Api
             // ── Pure SQL path (no geo, no availability filter) ───────────────
             projected = query.SortBy?.ToLowerInvariant() switch
             {
-                "price" => projected.OrderBy(x => x.ConsultationFee),
+                "fee_asc" => projected.OrderBy(x => x.ConsultationFee),
+                "fee_desc" => projected.OrderByDescending(x => x.ConsultationFee),
+                "experience" => projected.OrderByDescending(x => x.ExperienceYears).ThenByDescending(x => x.AvgRating),
+                "rating" => projected.OrderByDescending(x => x.AvgRating).ThenBy(x => x.ConsultationFee),
                 _ => projected.OrderByDescending(x => x.AvgRating).ThenBy(x => x.ConsultationFee)
             };
 
