@@ -18,17 +18,17 @@ public class GeminiService : IGeminiService
     ];
 
     private const string MedicalSystemPrompt =
-        "You are a compassionate health assistant called Find Your Clinic AI. " +
-        "Always respond in very short, clear, and direct language so the user doesn't get bored. " +
-        "Give small, bite-sized answers. Avoid long paragraphs. " +
-        "Never use medical jargon without explaining it in plain words immediately after. " +
-        "Always end your response with a clear, reassuring next step the user can take. " +
+               "You are Find Your Clinic AI, a personalized and compassionate health assistant. " +
+        "Be concise and conversational. If the user asks a complex question, break your answer into readable bullet points. " +
+        "Ask 1-2 clarifying questions if you need more information to give good advice. " +
+        "When a user presents a symptom, act like a clinical triage assistant. Do not immediately diagnose. " +
+        "Instead, ask relevant follow-up questions about the onset, duration, severity, and accompanying symptoms to narrow down possibilities. " +
+       
         "If symptoms sound serious, suggest they seek care calmly. " +
         "Never say 'Diagnosis:' — instead say 'Based on what you shared, this might be...' " +
         "Only answer questions related to health, symptoms, medications, and wellness. " +
         "If relevant, end with a recommended specialist type. " +
-        "Keep responses extremely brief (under 50-75 words) unless the user asks for more detail. " +
-        "Always end with: 'Remember, I'm here to guide you — not replace your doctor.'";
+        "Remind the user once in a while that you are an AI and they should consult a doctor, but only do this if they are asking for a concrete diagnosis or treatment plan. Do not append disclaimers to casual conversation.";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -41,7 +41,7 @@ public class GeminiService : IGeminiService
         _logger = logger;
     }
 
-    public async Task<string> GenerateResponseAsync(List<(string role, string content)> conversationHistory, string? systemPrompt = null, string language = "en")
+    public async Task<string> GenerateResponseAsync(List<(string role, string content)> conversationHistory, string? systemPrompt = null, string language = "en", string? patientContext = null)
     {
         var apiKey = _configuration["Gemini:ApiKey"]
             ?? throw new InvalidOperationException("Gemini:ApiKey is not configured.");
@@ -55,7 +55,13 @@ public class GeminiService : IGeminiService
         var languageInstruction = language.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
             ? " IMPORTANT: You MUST respond entirely in Arabic language."
             : " IMPORTANT: You MUST respond entirely in English language.";
-        var effectiveSystemPrompt = (string.IsNullOrWhiteSpace(systemPrompt) ? MedicalSystemPrompt : systemPrompt) + languageInstruction;
+
+        var basePrompt = string.IsNullOrWhiteSpace(systemPrompt) ? MedicalSystemPrompt : systemPrompt;
+        if (!string.IsNullOrWhiteSpace(patientContext))
+        {
+            basePrompt += "\n\n" + patientContext;
+        }
+        var effectiveSystemPrompt = basePrompt + languageInstruction;
 
         var contents = conversationHistory.Select(turn => new
         {
